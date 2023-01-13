@@ -1,0 +1,16 @@
+*.iml
+.gradle
+.idea
+.DS_Store
+build
+captures
+.externalNativeBuild
+.cxx
+local.properties
+xcuserdata
+lefthook.yml
+/.npmrc
+public/
+deploy.env
+secret.properties
+*.g.kt
