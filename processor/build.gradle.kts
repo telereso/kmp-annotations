@@ -35,10 +35,15 @@ plugins {
   kotlin("jvm")
   id("com.google.devtools.ksp")
   `maven-publish`
+  id("convention.publication")
 }
 
 group = rootProject.group
 version = rootProject.version
+
+java {
+  withSourcesJar()
+}
 
 publishing {
   publications {

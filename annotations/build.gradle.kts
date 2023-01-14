@@ -3,6 +3,7 @@ plugins {
   id("com.android.library")
   id("com.google.devtools.ksp")
   id("maven-publish")
+  id("convention.publication")
 }
 
 group = rootProject.group

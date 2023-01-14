@@ -14,3 +14,4 @@ public/
 deploy.env
 secret.properties
 *.g.kt
+/seceret_key
