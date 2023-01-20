@@ -18,6 +18,7 @@ dependencyResolutionManagement {
 }
 rootProject.name = "kmp-annotations"
 includeBuild("convention-plugins")
+include("gradle-plugin")
 include(":annotations")
 include(":processor")
 include(":app")
