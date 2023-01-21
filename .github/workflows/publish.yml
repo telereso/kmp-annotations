@@ -41,8 +41,36 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
 
+#    - name: Bump version and push tag
+#        id: create_tag
+#        uses: hennejg/github-tag-action@v4.1.jh1
+#        with:
+#          github_token: ${{ secrets.GITHUB_TOKEN }}
+#          release_branches: "main"
+##          dry_run: true
+
+
+    - name: Bump version and push tag
+      id: tag_version
+      uses: mathieudutour/github-tag-action@v6.1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Build Artifacts
-      run: bash scripts/publish.sh "${{ github.ref == 'refs/heads/main' && '--sonatype' || '--local' }}"
+      run: |
+        echo "${{ steps.tag_version.outputs.new_tag }}"
+        echo "${{ steps.tag_version.outputs.new_version }}"
+        echo "${{ steps.tag_version.outputs.changelog }}"
+        bash scripts/publish.sh "${{ github.ref == 'refs/heads/main' && '--sonatype' || '--local' }}"
+
+    - name: Create a GitHub release
+      if: ${{ github.ref == 'refs/heads/main' }}
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{ steps.tag_version.outputs.new_tag }}
+        name: Release ${{ steps.tag_version.outputs.new_tag }}
+        body: ${{ steps.tag_version.outputs.changelog }}
+
 
     - name: Archive artifacts
       uses: actions/upload-artifact@v2 
