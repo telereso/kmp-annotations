@@ -8,13 +8,14 @@
 name: Publish
 
 on:
-  permissions:
-    contents: write
   workflow_dispatch:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+
+permissions:
+  contents: write
 
 jobs:
   build:
