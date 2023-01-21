@@ -37,12 +37,43 @@ jobs:
         path: |
          ~/.gradle/caches
          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
+        key: "gradle-cache"
+
+#    - name: Bump version and push tag
+#        id: create_tag
+#        uses: hennejg/github-tag-action@v4.1.jh1
+#        with:
+#          github_token: ${{ secrets.GITHUB_TOKEN }}
+#          release_branches: "main"
+##          dry_run: true
+
+
+    - name: Bump version and push tag
+      id: tag_version
+      uses: mathieudutour/github-tag-action@v6.1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build Artifacts
-      run: bash scripts/publish.sh "${{ github.ref == 'refs/heads/main' && '--sonatype' || '--local' }}"
+      run: |
+        echo ${{ secrets.SIGNING_SECRET_KEY_RING_FILE }} | base64 -d > secret_key
+        bash scripts/publish.sh "${{ github.ref == 'refs/heads/main' && '--sonatype' || '--local' }}"
+      env:
+        OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+        OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+        SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
+        SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        SIGNING_SECRET_KEY_RING_FILE: "secret_key"
+        SONATYPE_STAGING_PROFILE_ID: ${{ secrets.SONATYPE_STAGING_PROFILE_ID }}
+
+    - name: Create a GitHub release
+      if: ${{ github.ref == 'refs/heads/main' }}
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{ steps.tag_version.outputs.new_tag }}
+        name: ${{ steps.tag_version.outputs.new_tag }}
+        body: ${{ steps.tag_version.outputs.changelog }}
+
 
     - name: Archive artifacts
       uses: actions/upload-artifact@v2 
