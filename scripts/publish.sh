@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PUBLISH_VERSION=0.0.1
+PUBLISH_VERSION=${1:-"0.0.1"}
 
 if [[ "$@" == *"--sonatype" ]]; then
     ./gradlew publishAllPublicationsToSonatypeRepository "-PpublishVersion=$PUBLISH_VERSION"

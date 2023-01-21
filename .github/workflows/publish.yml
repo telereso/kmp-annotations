@@ -57,7 +57,7 @@ jobs:
     - name: Build Artifacts
       run: |
         echo ${{ secrets.SIGNING_SECRET_KEY_RING_FILE }} | base64 -d > secret_key
-        bash scripts/publish.sh "${{ github.ref == 'refs/heads/main' && '--sonatype' || '--local' }}"
+        bash scripts/publish.sh ${{ steps.tag_version.outputs.new_version }} "${{ github.ref == 'refs/heads/main' && '--sonatype' || '--local' }}"
       env:
         OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
         OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
