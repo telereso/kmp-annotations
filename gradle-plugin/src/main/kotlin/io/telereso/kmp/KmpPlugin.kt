@@ -16,7 +16,7 @@ class KmpPlugin : Plugin<Project> {
         pluginManager.apply(KspGradleSubplugin::class.java)
 
         val annotationsVersion = "0.0.9"
-        dependencies.add("commonMain", "io.telereso.kmp:annotations:$annotationsVersion")
+        dependencies.add("commonMainImplementation", "io.telereso.kmp:annotations:$annotationsVersion")
         dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:$annotationsVersion")
 
         val teleresoKmp = teleresoKmp()
@@ -83,7 +83,7 @@ class KmpPlugin : Plugin<Project> {
 
                 from("${buildDir.path}/generated/ksp/metadata/commonMain/kotlin/")
                 into(
-                    "${rootProject.rootDir.path}/react-native-${
+                    "${baseDir}/react-native-${
                         projectPackageName.replace(
                             ".",
                             "-"
