@@ -14,7 +14,10 @@ class KmpPlugin : Plugin<Project> {
     override fun apply(project: Project): Unit = project.run {
 
         pluginManager.apply(KspGradleSubplugin::class.java)
-        dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:0.0.1")
+
+        val annotationsVersion = "0.0.9"
+        dependencies.add("commonMain", "io.telereso.kmp:annotations:$annotationsVersion")
+        dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:$annotationsVersion")
 
         val teleresoKmp = teleresoKmp()
 
