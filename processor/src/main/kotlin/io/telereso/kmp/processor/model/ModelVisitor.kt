@@ -53,6 +53,8 @@ class ModelVisitor(
             |   return jsonSerializer.encodeToString($className.serializer(), this)
             |}
             |
+            |@JsExport()
+            |@JsName("${className}ToJsonPretty")
             |fun $className.toJsonPretty(): String {
             |   return jsonPrettySerializer.encodeToString($className.serializer(), this)
             |}

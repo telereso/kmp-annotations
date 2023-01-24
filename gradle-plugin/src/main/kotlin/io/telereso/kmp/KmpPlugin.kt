@@ -1,6 +1,7 @@
 package io.telereso.kmp
 
 import com.google.devtools.ksp.gradle.KspGradleSubplugin
+import io.telereso.kmp.TeleresoKmpExtension.Companion.teleresoKmp
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.Copy
@@ -10,102 +11,133 @@ import org.gradle.kotlin.dsl.extra
 import java.util.*
 
 class KmpPlugin : Plugin<Project> {
-    override fun apply(project: Project) {
+    override fun apply(project: Project): Unit = project.run {
 
-        project.pluginManager.apply(KspGradleSubplugin::class.java)
-        project.dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:0.0.1")
+        pluginManager.apply(KspGradleSubplugin::class.java)
+        dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:0.0.1")
 
+        val teleresoKmp = teleresoKmp()
 
-        project.afterEvaluate {
-
+        afterEvaluate {
             // Common tasks
 
             val jsCleanLibraryDistributionTask = "jsCleanLibraryDistribution"
             tasks.create<Delete>(jsCleanLibraryDistributionTask) {
                 group = "Clean"
-                delete(project.buildDir.resolve("productionLibrary"))
+                delete(buildDir.resolve("productionLibrary"))
             }
 
             tasks.named("compileKotlinJs").configure {
                 dependsOn(jsCleanLibraryDistributionTask)
             }
 
-            when {
+            // Models tasks
 
-                // Models Tasks
-                project.name.toLowerCase(Locale.getDefault()).endsWith("models") -> {
-
-                    log("${project.name}: Creating Models Tasks")
-
-                    // Models tasks
-
-                    val copyGeneratedModelsTask = "kspCommonMainKotlinMetadataCopyGeneratedModels"
-                    project.tasks.create<Copy>(copyGeneratedModelsTask) {
-                        log("${project.name}: Copying ksp generated models")
-                        group = "Ksp"
-                        from("build/generated/ksp/metadata/commonMain/resources/kotlin/")
-                        into("src/commonMain/kotlin/")
-                    }
+            val copyGeneratedModelsTask = "kspCommonMainKotlinMetadataCopyGeneratedModels"
+            tasks.create<Copy>(copyGeneratedModelsTask) {
+                log("Copying ksp generated models")
+                group = "Ksp"
+                from("build/generated/ksp/metadata/commonMain/resources/kotlin/")
+                into("src/commonMain/kotlin/")
+            }
 
 
-                    val cleanModelsGeneratedFilesTask = "kspCommonMainKotlinClean"
+            val cleanModelsGeneratedFilesTask = "kspCommonMainKotlinClean"
 
-                    project.tasks.create<Delete>(cleanModelsGeneratedFilesTask) {
-                        group = "Clean"
-                        delete(project.fileTree("src").matching {
-                            include("**/*.g.kt")
-                        })
-                    }
+            tasks.create<Delete>(cleanModelsGeneratedFilesTask) {
+                group = "Clean"
+                delete(fileTree("src").matching {
+                    include("**/*.g.kt")
+                })
+            }
 
+            if (teleresoKmp.disableJsonConverters) {
+                log("Skipping adding models tasks")
+            } else {
+                log("Adding Models Tasks")
+                tasks.getByName(cleanModelsGeneratedFilesTask)
+                    .dependsOn("kspCommonMainKotlinMetadata")
+                tasks.getByName(copyGeneratedModelsTask)
+                    .dependsOn(cleanModelsGeneratedFilesTask)
+                tasks.getByName("preBuild").dependsOn(copyGeneratedModelsTask)
+                tasks.getByName("jsBrowserProductionLibraryDistribution")
+                    .dependsOn(copyGeneratedModelsTask)
 
-                    project.tasks.getByName(cleanModelsGeneratedFilesTask)
-                        .dependsOn("kspCommonMainKotlinMetadata")
-                    project.tasks.getByName(copyGeneratedModelsTask)
-                        .dependsOn(cleanModelsGeneratedFilesTask)
-                    project.tasks.getByName("preBuild").dependsOn(copyGeneratedModelsTask)
-                    project.tasks.getByName("jsBrowserProductionLibraryDistribution")
-                        .dependsOn(copyGeneratedModelsTask)
-
-
-                }
-                else -> {
-                    // Lib tasks
-                    val projectPackageName = getProjectName()
-
-                    log("${project.name}: Creating Lib Tasks fro project $projectPackageName")
-
-                    val copyGeneratedFilesAndroidTask = "kspCommonMainKotlinMetadataCopyGeneratedAndroid"
-
-                    project.tasks.create<Copy>(copyGeneratedFilesAndroidTask) {
-                        log("${project.name}: Copying ksp generated android files")
-
-                        from("${project.buildDir.path}/generated/ksp/metadata/commonMain/kotlin/")
-                        into("${project.rootProject.rootDir.path}/react-native-${projectPackageName.replace(".", "-")}/android/src/main/java/")
-
-                    }
+            }
 
 
-                    project.tasks.getByName(copyGeneratedFilesAndroidTask).dependsOn("kspCommonMainKotlinMetadata")
-                    project.tasks.getByName("preBuild").dependsOn(copyGeneratedFilesAndroidTask)
+            val projectPackageName = getProjectName()
+            val baseDir = "$rootDir".split("/react-native")[0]
 
+            log("Creating Lib Tasks fro project $projectPackageName")
 
-                    val copyGeneratedFilesIosTask = "kspCommonMainKotlinMetadataCopyGeneratedIos"
+            // Android
+            val copyGeneratedFilesAndroidTask =
+                "kspCommonMainKotlinMetadataCopyGeneratedAndroid"
 
-                    project.tasks.create<Copy>(copyGeneratedFilesIosTask) {
-                        log("${project.name}: Copying ksp generated ios files")
+            tasks.create<Copy>(copyGeneratedFilesAndroidTask) {
+                log("Copying ksp generated reactNative android files")
 
-                        from("${project.buildDir.path}/generated/ksp/metadata/commonMain/resources/ios")
-                        into("${project.rootProject.rootDir.path}/react-native-${projectPackageName.replace(".", "-")}/ios/")
+                from("${buildDir.path}/generated/ksp/metadata/commonMain/kotlin/")
+                into(
+                    "${rootProject.rootDir.path}/react-native-${
+                        projectPackageName.replace(
+                            ".",
+                            "-"
+                        )
+                    }/android/src/main/java/"
+                )
 
+            }
 
-                    }
+            // iOS
+            val copyGeneratedFilesIosTask = "kspCommonMainKotlinMetadataCopyGeneratedIos"
 
-                    project.tasks.getByName(copyGeneratedFilesIosTask).dependsOn("kspCommonMainKotlinMetadata")
-                    project.tasks.getByName("preBuild").dependsOn(copyGeneratedFilesIosTask)
-                }
+            tasks.create<Copy>(copyGeneratedFilesIosTask) {
+                log("Copying ksp generated reactNative ios files")
+
+                from("${buildDir.path}/generated/ksp/metadata/commonMain/resources/ios")
+                into(
+                    "${baseDir}/react-native-${
+                        projectPackageName.replace(
+                            ".",
+                            "-"
+                        )
+                    }/ios/"
+                )
+            }
+
+            // Js
+            val copyGeneratedFilesJsTask = "kspCommonMainKotlinMetadataCopyGeneratedJs"
+
+            tasks.create<Copy>(copyGeneratedFilesJsTask) {
+                log("Copying ksp generated reactNative js files")
+
+                from("${buildDir.path}/generated/ksp/metadata/commonMain/resources/js/")
+                into("${baseDir}/react-native-${projectPackageName.replace(".", "-")}/src/")
+            }
+
+            if (teleresoKmp.disableReactExport) {
+                log("Skipping adding reactNative tasks")
+            } else {
+                log("Adding reactNative tasks")
+
+                // Android tasks
+                tasks.getByName(copyGeneratedFilesAndroidTask)
+                    .dependsOn("kspCommonMainKotlinMetadata")
+                tasks.getByName("preBuild").dependsOn(copyGeneratedFilesAndroidTask)
+
+                // iOS tasks
+                tasks.getByName(copyGeneratedFilesIosTask)
+                    .dependsOn("kspCommonMainKotlinMetadata")
+                tasks.getByName("preBuild").dependsOn(copyGeneratedFilesIosTask)
+
+                // Js tasks
+                tasks.getByName(copyGeneratedFilesJsTask)
+                    .dependsOn("kspCommonMainKotlinMetadata")
+                tasks.getByName("preBuild").dependsOn(copyGeneratedFilesJsTask)
             }
         }
-
     }
 }
 
@@ -121,6 +153,9 @@ fun Project.getProjectName(): String {
     }.toString()
 }
 
+fun Project.log(message: String) {
+    println("Telereso:$name: ${message}")
+}
 
 fun log(message: String) {
     println("Telereso: ${message}")
