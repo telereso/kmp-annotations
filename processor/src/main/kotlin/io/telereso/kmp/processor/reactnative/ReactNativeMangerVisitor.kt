@@ -66,13 +66,12 @@ class ReactNativeMangerVisitor(
         }
 
         val modelImportString =
-            modelImports.joinToString("\n") { "import ${packageString}.models.$it" }
+            modelImports.joinToString("\n") { "import ${modelsPackageString}.models.$it" }
 
         outputStream.write(
             """
             |package $packageString.rn
             |
-            |$modelImportString
             |import $packageString.$originalClassName
             |import $modelsPackageString.*
             |import com.facebook.react.bridge.*
@@ -270,7 +269,12 @@ class ReactNativeMangerVisitor(
         val modelJsonImportString =
             modelFromJsonImports.joinToString("\n") {
                 """
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars    
+                // @ts-ignore
                 const ${it}FromJson = ${modelClassName}.${it}FromJson;
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                // @ts-ignore
+                const ${it}FromJsonArray = ${modelClassName}.${it}FromJsonArray;
                 """.trimIndent()
             }
 
@@ -376,7 +380,7 @@ private fun KSFunctionDeclaration.getResultIos(): Pair<String, String?> {
         type == null -> "res" to null
         type.startsWith(PREFIX_TASK_ARRAY) -> {
             val klass = REGEX_TASK_ARRAY.find(type)?.value
-            "${klass}.toJson(array: res)" to klass
+            "${klass}.Companion().toJson(array: res)" to klass
         }
         type.startsWith(PREFIX_TASK) -> {
             "res.toJson()" to null
