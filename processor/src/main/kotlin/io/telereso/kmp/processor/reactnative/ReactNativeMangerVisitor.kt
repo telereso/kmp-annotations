@@ -461,7 +461,7 @@ private fun KSFunctionDeclaration.getResultJs(): Pair<String, String?> {
                 klass = commonFlowClass.removeSuffix("?")
 
             when (klass) {
-                "unit" -> "" to null
+                "Unit", "unit",  -> "" to null
                 "string" , "boolean" , "number" -> "data" to klass
                 else -> {
                     "${klass}FromJson(${klass}.Companion, data)" to klass
