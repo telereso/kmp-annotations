@@ -40,7 +40,6 @@ class ModelVisitor(
             """
             |$filePackageString
             |
-            |// $importClassString
             |import kotlinx.serialization.builtins.ListSerializer
             |import kotlinx.serialization.decodeFromString
             |import kotlinx.serialization.json.Json
