@@ -24,6 +24,7 @@
 
 package io.telereso.kmp.processor.model
 
+import com.google.devtools.ksp.isInternal
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.*
@@ -60,6 +61,8 @@ class ModelVisitor(
             if (it.isBlank()) "" else "import $className"
         }
 
+        val internalString = if(classDeclaration.isInternal()) "internal " else ""
+
         outputStream.write(
             """
             |$filePackageString
@@ -72,31 +75,31 @@ class ModelVisitor(
             |
             |@JsExport()
             |@JsName("${className}ToJson")
-            |fun $className.toJson(): String {
+            |${internalString}fun $className.toJson(): String {
             |   return jsonSerializer.encodeToString($className.serializer(), this)
             |}
             |
             |@JsExport()
             |@JsName("${className}ToJsonPretty")
-            |fun $className.toJsonPretty(): String {
+            |${internalString}fun $className.toJsonPretty(): String {
             |   return jsonPrettySerializer.encodeToString($className.serializer(), this)
             |}
             |
             |@JsExport
             |@JsName("${className}FromJson")
-            |fun $className.Companion.fromJson(json:String): $className{
+            |${internalString}fun $className.Companion.fromJson(json:String): $className{
             |   return jsonSerializer.decodeFromString(json)
             |}
             |
             |@JsExport
             |@JsName("${className}ToJsonArray")
-            |fun $className.Companion.toJson(array: Array<$className>): String {
+            |${internalString}fun $className.Companion.toJson(array: Array<$className>): String {
             |   return jsonSerializer.encodeToString(ListSerializer($className.serializer()), array.toList())
             |}
             |
             |@JsExport
             |@JsName("${className}FromJsonArray")
-            |fun $className.Companion.fromJsonArray(json:String): Array<$className> {
+            |${internalString}fun $className.Companion.fromJsonArray(json:String): Array<$className> {
             |   return jsonSerializer.decodeFromString(ListSerializer($className.serializer()), json).toTypedArray()
             |}
             |
