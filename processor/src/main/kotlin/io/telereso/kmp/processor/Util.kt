@@ -1,6 +1,7 @@
 package io.telereso.kmp.processor
 
-import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.closestClassDeclaration
+import com.google.devtools.ksp.symbol.*
 
 
 val camelRegex = "(?<=[a-zA-Z])[A-Z]".toRegex()
@@ -23,6 +24,13 @@ fun String.snakeToUpperCamelCase(): String {
     return this.snakeToLowerCamelCase().replaceFirstChar { it.uppercase() }
 }
 
+fun KSClassDeclaration.getEnumEntries(): Sequence<KSDeclaration> {
+    return declarations.filter { it.closestClassDeclaration()?.classKind == ClassKind.ENUM_ENTRY }
+}
+
+fun String.isPrimitiveKotlin(): Boolean {
+    return this in listOf("String", "Boolean", "Int", "Long", "Double", "Flout")
+}
 
 fun KSTypeReference.kotlinType(): Pair<String,Boolean> {
     return when (this.toString()) {
@@ -67,8 +75,9 @@ fun String?.jsType(hasDefault: Boolean = false): String {
 private fun resolveJsType(type: String?, isNullable: Boolean, hasDefault: Boolean): String {
     return when (type) {
         null -> "void"
-        "Boolean" -> if (isNullable || hasDefault) "Boolean = false" else "boolean"
+        "string", "boolean", "number" -> type
         "String" -> if (isNullable || hasDefault) "String = ''" else "string"
+        "Boolean" -> if (isNullable || hasDefault) "Boolean = false" else "boolean"
         "Int" -> if (isNullable || hasDefault) "Number = 0" else "number"
         "Long" -> if (isNullable || hasDefault) "Number = 0" else "number"
         else -> "typeof $type"

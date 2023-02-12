@@ -1,20 +1,27 @@
 package io.telereso.kmp.processor.reactnative
 
-import com.google.devtools.ksp.getVisibility
+import com.google.devtools.ksp.*
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.*
 import io.telereso.kmp.processor.*
 import java.io.OutputStream
+import java.util.*
+import kotlin.collections.HashMap
+import kotlin.collections.HashSet
+
+
+const val CLASS_COMMON_FLOW = "CommonFlow"
 
 class ReactNativeMangerVisitor(
     private val logger: KSPLogger,
     private val codeGenerator: CodeGenerator,
     private val dependencies: Dependencies,
     val packageName: String? = null
-) : KSVisitorVoid() { //1
-    val skipFunctions = listOf("equals", "hashCode", "toString")
+) : KSVisitorVoid() {
+    private val skipFunctions = listOf("equals", "hashCode", "toString")
+    private val skipClasses = listOf("CommonFlow","String","Boolean","Int" , "Unit" )
 
     override fun visitClassDeclaration(
         classDeclaration: KSClassDeclaration, data: Unit
@@ -44,21 +51,24 @@ class ReactNativeMangerVisitor(
             extensionName = "kt"
         )
 
+        val enums = hashSetOf<String>()
+
         val modelImports = classDeclaration.getAllFunctions().mapNotNull {
             if (it.getVisibility() == Visibility.PUBLIC && !skipFunctions.contains(it.simpleName.asString())) {
-                it.getMethodBodyAndroid().second
+                it.getMethodBodyAndroid(enums).second
             } else null
         }
+
 
         val methods = classDeclaration.getAllFunctions().mapNotNull {
             if (it.getVisibility() == Visibility.PUBLIC && !skipFunctions.contains(it.simpleName.asString())) {
                 """  
                 |  @ReactMethod
                 |  fun ${it.simpleName.asString()}(${
-                    it.getTypedParametersAndroid()
+                    it.getTypedParametersAndroid(enums)
                         .let { params -> if (params.isNotBlank()) "$params, " else params }
                 }promise: Promise) {
-                |${it.getMethodBodyAndroid().first}
+                |${it.getMethodBodyAndroid(enums).first}
                 |  }
                 """.trimMargin()
             } else
@@ -114,9 +124,11 @@ class ReactNativeMangerVisitor(
             extensionName = "swift"
         )
 
+        val enums = HashMap<String, List<String>>()
+
         val modelImports = classDeclaration.getAllFunctions().mapNotNull {
             if (it.getVisibility() == Visibility.PUBLIC && !skipFunctions.contains(it.simpleName.asString())) {
-                it.getMethodBodyIos(className).second
+                it.getMethodBodyIos(className,enums).second
             } else null
         }
 
@@ -127,10 +139,10 @@ class ReactNativeMangerVisitor(
                     it.getTypedHeaderParametersIos()
                 })
                 |    func ${it.simpleName.asString()}(${
-                    it.getTypedParametersIos()
+                    it.getTypedParametersIos(enums)
                         .let { params -> if (params.isNotBlank()) "$params, " else "_ " }
                 }resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
-                |        ${it.getMethodBodyIos(className).first}
+                |        ${it.getMethodBodyIos(className,enums).first}
                 |    }
                 """.trimMargin()
             } else
@@ -185,9 +197,11 @@ class ReactNativeMangerVisitor(
             extensionName = "m"
         )
 
+        val enums = hashMapOf<String, List<String>>()
+
         val modelImports = classDeclaration.getAllFunctions().mapNotNull {
             if (it.getVisibility() == Visibility.PUBLIC && !skipFunctions.contains(it.simpleName.asString())) {
-                it.getMethodBodyIos(className).second
+                it.getMethodBodyIos(className, enums).second
             } else null
         }
 
@@ -245,10 +259,12 @@ class ReactNativeMangerVisitor(
         val modelFromJsonImports = hashSetOf<String>()
         val modelToJsonImports = hashSetOf<String>()
 
+        val enums = hashMapOf<String, List<String>>()
+
         classDeclaration.getAllFunctions().forEach {
             if (it.getVisibility() == Visibility.PUBLIC && !skipFunctions.contains(it.simpleName.asString())) {
-                val typedParams = it.getTypedParametersJs().second
-                it.getMethodBodyJs(className).let { trip ->
+                val typedParams = it.getTypedParametersJs(enums).second
+                it.getMethodBodyJs(className, enums).let { trip ->
                     trip.second?.let { klass ->
                         typedParams.add(klass)
                         modelFromJsonImports.add(klass)
@@ -260,14 +276,22 @@ class ReactNativeMangerVisitor(
         }
 
         val modelImportString =
-            modelImports.joinToString("\n") {
+            modelImports
+                .filter { m -> !skipClasses.any { s -> m.startsWith(s,true) } }
+                .map { it.removeSuffix("?") }
+                .distinct()
+                .joinToString("\n") {
                 """
                 const $it = ${modelClassName}.${it};
                 """.trimIndent()
             }
 
         val modelJsonImportString =
-            modelFromJsonImports.joinToString("\n") {
+            modelFromJsonImports
+                .filter { m -> !skipClasses.any { s -> m.startsWith(s,true) } }
+                .map { it.removeSuffix("?") }
+                .distinct()
+                .joinToString("\n") {
                 """
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars    
                 // @ts-ignore
@@ -287,8 +311,8 @@ class ReactNativeMangerVisitor(
 
         val methods = classDeclaration.getAllFunctions().mapNotNull {
             if (it.getVisibility() == Visibility.PUBLIC && !skipFunctions.contains(it.simpleName.asString())) {
-                val res = it.getMethodBodyJs(className)
-                val typedParams = it.getTypedParametersJs()
+                val res = it.getMethodBodyJs(className, enums)
+                val typedParams = it.getTypedParametersJs(enums)
                 res.second?.let { klass: String ->
                     modelImports.add(klass)
                 }
@@ -297,7 +321,7 @@ class ReactNativeMangerVisitor(
                 """
                 |export function ${it.simpleName.asString()}(${typedParams.first}): Promise<${res.second.jsType()}> {
                 |  return new Promise<${res.second.jsType()}>((resolve, reject) => {
-                |      ${res.first}
+                |${res.first}
                 |  });
                 |}
                 """.trimMargin()
@@ -345,8 +369,9 @@ const val PREFIX_TASK = "Task<"
 const val PREFIX_TASK_ARRAY = "Task<Array<"
 val REGEX_TASK = Regex("(?<=Task<)(.*?)(?=>)")
 val REGEX_TASK_ARRAY = Regex("(?<=Task<Array<)(.*?)(?=>)")
+val REGEX_COMMON_FLOW = Regex("(?<=$CLASS_COMMON_FLOW<)(.*?)(?=>)")
 
-private fun KSFunctionDeclaration.getResultAndroid(): Pair<String, String?> {
+private fun KSFunctionDeclaration.getResultAndroid(enums: HashSet<String>): Pair<String, String?> {
 
 
     val type = returnType?.resolve()
@@ -360,12 +385,28 @@ private fun KSFunctionDeclaration.getResultAndroid(): Pair<String, String?> {
         }
         typeString.startsWith(PREFIX_TASK) -> {
             val klass = REGEX_TASK.find(typeString)?.value
+            val commonFlowClass = REGEX_COMMON_FLOW.find(typeString)?.value
+
             val nullabilityString = if (klass?.endsWith("?") == true) "?" else ""
 //            val nullabilityString = when (type.nullability) {
 //                Nullability.NULLABLE -> "?"
 //                else -> ""
 //            }
-            "it${nullabilityString}.toJson()" to null
+            var res = "it"
+
+            when {
+                klass == null -> {}
+                klass == "Unit" -> {
+                    res = "\"\""
+                }
+                !commonFlowClass.isNullOrEmpty() -> {}
+                enums.contains(klass) -> {}
+                !klass.isPrimitiveKotlin() -> {
+                    res = "${res}${nullabilityString}.toJson()"
+                }
+            }
+
+            res to null
         }
         else -> {
             "it" to null
@@ -378,12 +419,21 @@ private fun KSFunctionDeclaration.getResultIos(): Pair<String, String?> {
     val type = returnType?.resolve()?.toString()
     return when {
         type == null -> "res" to null
+        type == "Unit" -> "\"\"" to null
         type.startsWith(PREFIX_TASK_ARRAY) -> {
             val klass = REGEX_TASK_ARRAY.find(type)?.value
             "${klass}.Companion().toJson(array: res)" to klass
         }
         type.startsWith(PREFIX_TASK) -> {
-            "res.toJson()" to null
+            val klass = REGEX_TASK.find(type)?.value
+            val commonFlowClass = REGEX_COMMON_FLOW.find(type)?.value
+            when {
+                commonFlowClass != null || klass == null || klass == "Unit"-> "\"\"" to null
+                klass in listOf("String", "Long", "Int", "Boolean") -> "res" to null
+                else -> {
+                    "res.toJson()" to null
+                }
+            }
         }
         else -> {
             "res" to null
@@ -395,14 +445,29 @@ private fun KSFunctionDeclaration.getResultJs(): Pair<String, String?> {
 
     val type = returnType?.resolve()?.toString()
     return when {
-        type == null -> "data" to null
+        type == null || type ==  "Unit" -> "" to null
+        type.startsWith("String") -> "data" to "String"
+        type.startsWith("Boolean") -> "data" to "boolean"
+        type.startsWith("Int") -> "data" to "number"
         type.startsWith(PREFIX_TASK_ARRAY) -> {
             val klass = REGEX_TASK_ARRAY.find(type)?.value?.jsType()?.removePrefix("typeof ")
-            "${klass}FromJsonArray(${klass}.Companion,data)" to klass
+            "${klass}FromJsonArray(${klass}.Companion, data)" to klass
         }
         type.startsWith(PREFIX_TASK) -> {
-            val klass = REGEX_TASK.find(type)?.value?.jsType()?.removePrefix("typeof ")
-            "${klass}FromJson(${klass}.Companion,data)" to klass
+            var klass = REGEX_TASK.find(type)?.value?.jsType()?.removePrefix("typeof ")
+            val commonFlowClass = REGEX_COMMON_FLOW.find(type)?.value
+
+            if (commonFlowClass != null)
+                klass = commonFlowClass.removeSuffix("?")
+
+            when (klass) {
+                "Unit", "unit",  -> "" to null
+                "string" , "boolean" , "number" -> "data" to klass
+                else -> {
+                    "${klass}FromJson(${klass}.Companion, data)" to klass
+                }
+            }
+
         }
         else -> {
             "data" to null
@@ -410,14 +475,14 @@ private fun KSFunctionDeclaration.getResultJs(): Pair<String, String?> {
     }
 }
 
-private fun KSFunctionDeclaration.getMethodBodyAndroid(): Pair<String, String?> {
+private fun KSFunctionDeclaration.getMethodBodyAndroid(enums: HashSet<String>): Pair<String, String?> {
     val type = returnType?.resolve()?.toString()
     return when {
         type == null -> "" to null
         type.startsWith(PREFIX_TASK) -> {
-            val res = getResultAndroid()
+            val res = getResultAndroid(enums)
             """       
-            |    manager.${simpleName.asString()}(${getParametersAndroid()}).onSuccess {
+            |    manager.${simpleName.asString()}(${getParametersAndroid(enums)}).onSuccess {
             |      promise.resolve(${res.first})
             |    }.onFailure {
             |      promise.reject(it)
@@ -426,7 +491,7 @@ private fun KSFunctionDeclaration.getMethodBodyAndroid(): Pair<String, String?> 
         }
         else -> {
             "       try {\n" +
-                    "          promise.resolve(manager.${simpleName.asString()}(${getParametersAndroid()})) \n" +
+                    "          promise.resolve(manager.${simpleName.asString()}(${getParametersAndroid(enums)})) \n" +
                     "       } catch (e:Exception){\n" +
                     "          promise.reject(e)\n" +
                     "       }\n" to null
@@ -435,8 +500,12 @@ private fun KSFunctionDeclaration.getMethodBodyAndroid(): Pair<String, String?> 
 
 }
 
-private fun KSFunctionDeclaration.getMethodBodyIos(className: String): Pair<String, String?> {
+private fun KSFunctionDeclaration.getMethodBodyIos(
+    className: String,
+    enums: HashMap<String, List<String>>
+): Pair<String, String?> {
     val type = returnType?.resolve()?.toString()
+    val paramsRes = getParametersIos(enums)
     return when {
         type == null -> "" to null
         type.startsWith(PREFIX_TASK) -> {
@@ -445,7 +514,8 @@ private fun KSFunctionDeclaration.getMethodBodyIos(className: String): Pair<Stri
             |if (manager == nil) {
             |            reject("${simpleName.asString()} error", "${className}Manager was not initialized", "${className}Manager was not initialized")
             |        } else {
-            |            manager!.${simpleName.asString()}(${getParametersIos()})
+            |            ${paramsRes.second}
+            |            manager!.${simpleName.asString()}(${paramsRes.first})
             |                    .onSuccess { result in
             |                        guard let res = result else {
             |                            return
@@ -463,7 +533,8 @@ private fun KSFunctionDeclaration.getMethodBodyIos(className: String): Pair<Stri
             |if (manager == nil) {
             |            reject("${simpleName.asString()} error", "${className}Manager was not initialized", "${className}Manager was not initialized")
             |        } else {
-            |            resolve(manager!.${simpleName.asString()}(${getParametersIos()}))
+            |            ${paramsRes.second}
+            |            resolve(manager!.${simpleName.asString()}(${paramsRes.first}))
             |        }
             """.trimMargin() to null
         }
@@ -471,18 +542,24 @@ private fun KSFunctionDeclaration.getMethodBodyIos(className: String): Pair<Stri
 
 }
 
-private fun KSFunctionDeclaration.getMethodBodyJs(className: String): Triple<String, String?, Set<String>> {
+private fun KSFunctionDeclaration.getMethodBodyJs(className: String, enums: HashMap<String, List<String>>): Triple<String, String?, Set<String>> {
     val type = returnType?.resolve()?.toString()
     return when {
         type == null -> Triple("void", null, emptySet())
 //        type.startsWith(PREFIX_TASK) -> {
+//        type.startsWith(CLASS_COMMON_FLOW) -> Triple("void", null, emptySet())
         else -> {
             val res = getResultJs()
-            val dataString = if (type == "Unit") "" else "data: string"
+            val dataString = when (type){
+                "Unit", "Task<Unit>" -> ""
+                "Boolean", "Task<Boolean>" -> "data: boolean"
+                "Int", "Task<Int>" -> "data: number"
+                else -> "data: string"
+            }
             val resolveString = if (type == "Unit") "" else res.first
 
 
-            val params = getParametersJs()
+            val params = getParametersJs(enums)
             Triple(
                 """
             |    $className.${simpleName.asString()}(${params.first})
@@ -510,29 +587,47 @@ private fun KSTypeReference.getDefault(nullability: Nullability): String {
     }
 }
 
-private fun KSFunctionDeclaration.getTypedParametersAndroid(): String {
+private fun KSFunctionDeclaration.getTypedParametersAndroid(enums: HashSet<String>): String {
     return parameters.mapNotNull { p ->
         val t = p.type.resolve()
         val nullabilityString = when (t.nullability) {
             Nullability.NULLABLE -> "?"
             else -> ""
         }
+
+        val paramClass = t.declaration.closestClassDeclaration()
+        if (paramClass?.classKind == ClassKind.ENUM_CLASS)
+            enums.add(paramClass.simpleName.asString())
+
         val defaultString = if (p.hasDefault) " = ${p.type.getDefault(t.nullability)}" else ""
         p.name?.let { name -> "${name.asString()}: ${p.type.kotlinType().first}$nullabilityString$defaultString" }
     }.joinToString(", ")
 }
 
-private fun KSFunctionDeclaration.getTypedParametersIos(): String {
+private fun KSFunctionDeclaration.getTypedParametersIos(enums: HashMap<String,List<String>>): String {
     return parameters.mapNotNull { p ->
+        val t = p.type.resolve()
+        val paramClass = t.declaration.closestClassDeclaration()
+        if (paramClass?.classKind == ClassKind.ENUM_CLASS){
+            enums[paramClass.simpleName.asString()] =
+                paramClass.getEnumEntries().map { it.simpleName.asString() }.toList()
+        }
+
         p.name?.let { name -> "${name.asString()}: ${p.type.swiftType().first}" }
     }.joinToString(", ")
 }
 
-private fun KSFunctionDeclaration.getTypedParametersJs(): Pair<String, HashSet<String>> {
+private fun KSFunctionDeclaration.getTypedParametersJs(enums: HashMap<String, List<String>>): Pair<String, HashSet<String>> {
     val paramClasses = hashSetOf<String>()
     return parameters.mapNotNull { p ->
         p.name?.let { name ->
             val type = p.type.jsType(p.hasDefault)
+            val t = p.type.resolve()
+            val paramClass = t.declaration.closestClassDeclaration()
+            if (paramClass?.classKind == ClassKind.ENUM_CLASS){
+                enums[paramClass.simpleName.asString()] =
+                    paramClass.getEnumEntries().map { it.simpleName.asString() }.toList()
+            }
             if (type.startsWith("typeof ")) {
                 paramClasses.add(type.removePrefix("typeof "))
             }
@@ -585,41 +680,91 @@ private fun KSFunctionDeclaration.getTypedHeaderParametersIosOC(): String {
 
 }
 
-private fun KSFunctionDeclaration.getParametersAndroid(): String {
+private fun KSFunctionDeclaration.getParametersAndroid(enums: HashSet<String>): String {
     return parameters.mapNotNull { p ->
         p.name?.let { name ->
+            val type = p.type.resolve()
             val kotlinType = p.type.kotlinType()
-            val paramsAndroid =
-                if (kotlinType.second) "${p.type}.fromJson(${name.asString()})" else p.name?.asString()
-            paramsAndroid
+            when {
+                kotlinType.second && enums.contains(p.type.toString()) ->{
+                    val res = "${p.type}.valueOf(${name.asString()})"
+
+                    if(p.hasDefault && type.isMarkedNullable){
+                        "${name.asString()}?.let { $res }"
+                    }else {
+                        res
+                    }
+                }
+                kotlinType.second ->{
+                    "${p.type}.fromJson(${name.asString()})"
+                }
+                else -> {
+                    p.name?.asString()
+                }
+            }
         }
     }.joinToString(", ")
 }
 
-private fun KSFunctionDeclaration.getParametersIos(): String {
+private fun KSFunctionDeclaration.getParametersIos(enums: HashMap<String, List<String>>): Pair<String, String> {
+    val enumSwitch = StringBuilder()
     return parameters.mapNotNull { p ->
         p.name?.let { name ->
             val iosType = p.type.swiftType()
-            val paramIos = when (iosType.first) {
-                "Bool" -> "${name.asString()} ? true : false"
-                else -> if (iosType.second) "${p.type}.companion.fromJson(json: ${name.asString()})" else name.asString()
+            val typeString = p.type.toString()
+            val paramIos = when  {
+                iosType.second && enums.keys.contains(typeString) -> {
+                    val enumValue = "${name.asString()}Value"
+                    val enumEntries = enums[typeString] ?: emptyList()
+                    enumSwitch.appendLine("""
+                        |let $enumValue: ${p.type}
+                        |            switch ${name.asString()} {
+                    """.trimMargin())
+
+                    enumEntries.forEach { e->
+                        enumSwitch.appendLine("""
+                        |            case "$e":
+                        |                $enumValue = ${p.type}.${e.lowercase().snakeToLowerCamelCase()}
+                    """.trimMargin())
+                    }
+
+                    enumSwitch.appendLine("""
+                        |            default:
+                        |                $enumValue = ${p.type}.${enumEntries.first().lowercase().snakeToLowerCamelCase()}
+                        |            }
+                    """.trimMargin())
+
+                    enumValue
+                }
+                iosType.second -> {
+                    "${p.type}.companion.fromJson(json: ${name.asString()})"
+                }
+                iosType.first == "Bool" -> "${name.asString()} ? true : false"
+                else -> name.asString()
             }
             "${name.asString()}: $paramIos"
         }
-    }.joinToString(", ")
+    }.joinToString(", ") to enumSwitch.toString()
 }
 
-private fun KSFunctionDeclaration.getParametersJs(): Pair<String, Set<String>> {
+private fun KSFunctionDeclaration.getParametersJs(enums: HashMap<String, List<String>>): Pair<String, Set<String>> {
     val paramClasses = hashSetOf<String>()
     return parameters.mapNotNull { p ->
         p.name?.let { name ->
+            val typeString = p.type.toString()
             val jsType = p.type.jsType(p.hasDefault)
-            val param = if (jsType.startsWith("typeof")) {
-                paramClasses.add(jsType.removePrefix("typeof "))
-                "${p.type}ToJson(${name.asString()})"
-            } else
-                name.asString()
-            param
+            when{
+                enums.keys.contains(typeString) -> {
+                    "${typeString.replaceFirstChar { it.lowercase(Locale.getDefault()) }}.name"
+                }
+                jsType.startsWith("typeof") -> {
+                    paramClasses.add(jsType.removePrefix("typeof "))
+                    "${p.type}ToJson(${name.asString()})"
+                }
+                else -> {
+                    name.asString()
+                }
+            }
         }
     }.joinToString(", ") to paramClasses
 }
