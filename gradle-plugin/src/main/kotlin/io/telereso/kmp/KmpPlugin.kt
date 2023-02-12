@@ -32,14 +32,13 @@ import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.extra
-import java.util.*
 
 class KmpPlugin : Plugin<Project> {
     override fun apply(project: Project): Unit = project.run {
 
         pluginManager.apply(KspGradleSubplugin::class.java)
 
-        val annotationsVersion = "0.0.11"
+        val annotationsVersion = "0.0.12"
         dependencies.add("commonMainImplementation", "io.telereso.kmp:annotations:$annotationsVersion")
         dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:$annotationsVersion")
 //        dependencies.add("commonMainImplementation", project(":annotations"))
@@ -59,6 +58,21 @@ class KmpPlugin : Plugin<Project> {
             tasks.named("compileKotlinJs").configure {
                 dependsOn(jsCleanLibraryDistributionTask)
             }
+
+            val dependsOnTasks = listOf(
+                "compileKotlinJs",
+                "compileKotlinJvm",
+                "compileCommonMainKotlinMetadata",
+                "compileDebugKotlinAndroid",
+                "compileCommonMainKotlinMetadata",
+                "compileKotlinIosArm64",
+                "compileKotlinIosSimulatorArm64",
+                "compileKotlinIosX64",
+                "jsBrowserProductionLibraryDistribution",
+                "preBuild",
+                "build",
+                "allTests"
+            )
 
             // Models tasks
 
@@ -84,14 +98,21 @@ class KmpPlugin : Plugin<Project> {
                 log("Skipping adding models tasks")
             } else {
                 log("Adding Models Tasks")
-                tasks.getByName(cleanModelsGeneratedFilesTask)
-                    .dependsOn("kspCommonMainKotlinMetadata")
-                tasks.getByName(copyGeneratedModelsTask)
-                    .dependsOn(cleanModelsGeneratedFilesTask)
-                tasks.getByName("preBuild").dependsOn(copyGeneratedModelsTask)
-                tasks.getByName("jsBrowserProductionLibraryDistribution")
-                    .dependsOn(copyGeneratedModelsTask)
 
+                tasks.findByName("clean")?.dependsOn(cleanModelsGeneratedFilesTask)
+
+                tasks.getByName("kspCommonMainKotlinMetadata")
+                    .dependsOn(cleanModelsGeneratedFilesTask)
+
+                tasks.getByName("kspCommonMainKotlinMetadata")
+                    .finalizedBy(copyGeneratedModelsTask)
+
+                tasks.getByName(copyGeneratedModelsTask)
+                    .dependsOn("kspCommonMainKotlinMetadata")
+
+                dependsOnTasks.forEach{
+                    tasks.findByName(it)?.dependsOn(copyGeneratedModelsTask)
+                }
             }
 
 
@@ -103,6 +124,12 @@ class KmpPlugin : Plugin<Project> {
             // Android
             val copyGeneratedFilesAndroidTask =
                 "kspCommonMainKotlinMetadataCopyGeneratedAndroid"
+
+            val cleanAndroidGeneratedFiles = "cleanAndroidGeneratedFiles"
+            tasks.create<Delete>(cleanAndroidGeneratedFiles) {
+                group = "Clean"
+                delete(buildDir.resolve("generated/ksp/metadata/commonMain/kotlin"))
+            }
 
             tasks.create<Copy>(copyGeneratedFilesAndroidTask) {
                 log("Copying ksp generated reactNative android files")
@@ -154,17 +181,23 @@ class KmpPlugin : Plugin<Project> {
                 // Android tasks
                 tasks.getByName(copyGeneratedFilesAndroidTask)
                     .dependsOn("kspCommonMainKotlinMetadata")
-                tasks.getByName("preBuild").dependsOn(copyGeneratedFilesAndroidTask)
+                tasks.getByName(copyGeneratedFilesAndroidTask)
+                    .finalizedBy(cleanAndroidGeneratedFiles)
 
                 // iOS tasks
                 tasks.getByName(copyGeneratedFilesIosTask)
                     .dependsOn("kspCommonMainKotlinMetadata")
-                tasks.getByName("preBuild").dependsOn(copyGeneratedFilesIosTask)
 
                 // Js tasks
                 tasks.getByName(copyGeneratedFilesJsTask)
                     .dependsOn("kspCommonMainKotlinMetadata")
-                tasks.getByName("preBuild").dependsOn(copyGeneratedFilesJsTask)
+
+                dependsOnTasks.forEach {
+                    tasks.findByName(it)?.dependsOn(cleanAndroidGeneratedFiles)
+                    tasks.findByName(it)?.dependsOn(copyGeneratedFilesAndroidTask)
+                    tasks.findByName(it)?.dependsOn(copyGeneratedFilesIosTask)
+                    tasks.findByName(it)?.dependsOn(copyGeneratedFilesJsTask)
+                }
             }
         }
     }
