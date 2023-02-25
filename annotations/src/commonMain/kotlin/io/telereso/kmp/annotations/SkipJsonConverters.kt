@@ -22,22 +22,10 @@
  * SOFTWARE.
  */
 
-package io.telereso.kmp.processor.model
+package io.telereso.kmp.annotations
 
-import com.google.devtools.ksp.isInternal
-import com.google.devtools.ksp.processing.KSPLogger
-import com.google.devtools.ksp.symbol.KSAnnotated
-import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.validate
-import io.telereso.kmp.annotations.SkipJsonConverters
+import kotlin.annotation.AnnotationRetention.SOURCE
 
-class ModelSymbolValidator(private val logger: KSPLogger) {
-    fun isValid(symbol: KSAnnotated): Boolean {
-        return symbol is KSClassDeclaration
-                && symbol.validate()
-                && !symbol.isInternal()
-                && !symbol
-            .annotations.map { s -> s.toString() }.toList()
-            .contains("@${SkipJsonConverters::class.simpleName}")
-    }
-}
+@Target(AnnotationTarget.CLASS)
+@Retention(SOURCE)
+annotation class SkipJsonConverters()

@@ -76,7 +76,6 @@ class KMPModelProcessor(
 
             validatedSymbols.filter {
                 modelValidator.isValid(it)
-                true
             }.forEach {
                 it.accept(visitor, Unit)
                 if(!isUtilFileGenerated){
