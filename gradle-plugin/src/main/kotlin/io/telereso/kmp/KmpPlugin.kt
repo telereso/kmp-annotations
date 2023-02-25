@@ -38,7 +38,7 @@ class KmpPlugin : Plugin<Project> {
 
         pluginManager.apply(KspGradleSubplugin::class.java)
 
-        val annotationsVersion = "0.0.12"
+        val annotationsVersion = "0.0.13"
         dependencies.add("commonMainImplementation", "io.telereso.kmp:annotations:$annotationsVersion")
         dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:$annotationsVersion")
 //        dependencies.add("commonMainImplementation", project(":annotations"))

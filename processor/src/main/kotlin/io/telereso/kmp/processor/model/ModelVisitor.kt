@@ -58,7 +58,7 @@ class ModelVisitor(
         }
 
         val importClassString = filePackageString.let {
-            if (it.isBlank()) "" else "import $className"
+            if (it.isBlank()) "" else "import $packageString.$className"
         }
 
         val internalString = if(classDeclaration.isInternal()) "internal " else ""
