@@ -1,9 +1,9 @@
 package com.yourcompany.fragmentfactory.data.model
 
+import io.telereso.kmp.annotations.Builder
 import io.telereso.kmp.annotations.FlutterExport
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlin.js.ExperimentalJsExport
 
 /**
  * The RocketLaunch class is marked with the @Serializable annotation,
@@ -11,6 +11,7 @@ import kotlin.js.ExperimentalJsExport
  */
 @Serializable
 @FlutterExport
+@Builder
 data class RocketLaunch(
     /**
      * The @SerialName annotation allows you to redefine field names,
@@ -34,17 +35,22 @@ data class RocketLaunch(
     val launchSuccess: Boolean? = null,
     @SerialName("links")
     val links: Links? = null,
+    val array: Array<Pokemon>? = null,
+    val list: List<Links>? = null,
 )
 
 @Serializable
 @FlutterExport
+@Builder
 data class Rocket(
     @SerialName("rocket_id")
-    val id: String? = null,
+    var id: String? = null,
     @SerialName("rocket_name")
-    val name: String? = null,
+    var name: String? = null,
     @SerialName("rocket_type")
-    val type: String? = null,
+    var type: String? = null,
+    var array: Array<String>? = null,
+    var list: List<String>? = null,
 )
 
 @Serializable

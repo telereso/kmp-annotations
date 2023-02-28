@@ -38,7 +38,7 @@ class KmpPlugin : Plugin<Project> {
 
         pluginManager.apply(KspGradleSubplugin::class.java)
 
-        val annotationsVersion = "0.0.13"
+        val annotationsVersion = "0.0.14"
         dependencies.add("commonMainImplementation", "io.telereso.kmp:annotations:$annotationsVersion")
         dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:$annotationsVersion")
 //        dependencies.add("commonMainImplementation", project(":annotations"))
@@ -64,7 +64,6 @@ class KmpPlugin : Plugin<Project> {
                 "compileKotlinJvm",
                 "compileCommonMainKotlinMetadata",
                 "compileDebugKotlinAndroid",
-                "compileCommonMainKotlinMetadata",
                 "compileKotlinIosArm64",
                 "compileKotlinIosSimulatorArm64",
                 "compileKotlinIosX64",
@@ -76,43 +75,43 @@ class KmpPlugin : Plugin<Project> {
 
             // Models tasks
 
-            val copyGeneratedModelsTask = "kspCommonMainKotlinMetadataCopyGeneratedModels"
-            tasks.create<Copy>(copyGeneratedModelsTask) {
-                log("Copying ksp generated models")
-                group = "Ksp"
-                from("build/generated/ksp/metadata/commonMain/resources/kotlin/")
-                into("src/commonMain/kotlin/")
-            }
-
-
-            val cleanModelsGeneratedFilesTask = "kspCommonMainKotlinClean"
-
-            tasks.create<Delete>(cleanModelsGeneratedFilesTask) {
-                group = "Clean"
-                delete(fileTree("src").matching {
-                    include("**/*.g.kt")
-                })
-            }
+//            val copyGeneratedModelsTask = "kspCommonMainKotlinMetadataCopyGeneratedModels"
+//            tasks.create<Copy>(copyGeneratedModelsTask) {
+//                log("Copying ksp generated models")
+//                group = "Ksp"
+//                from("build/generated/ksp/metadata/commonMain/resources/kotlin/")
+//                into("src/commonMain/kotlin/")
+//            }
+//
+//
+//            val cleanModelsGeneratedFilesTask = "kspCommonMainKotlinClean"
+//
+//            tasks.create<Delete>(cleanModelsGeneratedFilesTask) {
+//                group = "Clean"
+//                delete(fileTree("src").matching {
+//                    include("**/*.g.kt")
+//                })
+//            }
 
             if (teleresoKmp.disableJsonConverters) {
                 log("Skipping adding models tasks")
             } else {
                 log("Adding Models Tasks")
 
-                tasks.findByName("clean")?.dependsOn(cleanModelsGeneratedFilesTask)
+//                tasks.findByName("clean")?.dependsOn(cleanModelsGeneratedFilesTask)
 
-                tasks.getByName("kspCommonMainKotlinMetadata")
-                    .dependsOn(cleanModelsGeneratedFilesTask)
+//                tasks.getByName("kspCommonMainKotlinMetadata")
+//                    .dependsOn(cleanModelsGeneratedFilesTask)
 
-                tasks.getByName("kspCommonMainKotlinMetadata")
-                    .finalizedBy(copyGeneratedModelsTask)
+//                tasks.getByName("kspCommonMainKotlinMetadata")
+//                    .finalizedBy(copyGeneratedModelsTask)
 
-                tasks.getByName(copyGeneratedModelsTask)
-                    .dependsOn("kspCommonMainKotlinMetadata")
+//                tasks.getByName(copyGeneratedModelsTask)
+//                    .dependsOn("kspCommonMainKotlinMetadata")
 
-                dependsOnTasks.forEach{
-                    tasks.findByName(it)?.dependsOn(copyGeneratedModelsTask)
-                }
+//                dependsOnTasks.forEach{
+//                    tasks.findByName(it)?.dependsOn(copyGeneratedModelsTask)
+//                }
             }
 
 
