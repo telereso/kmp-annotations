@@ -35,15 +35,26 @@
 package com.yourcompany.fragmentfactory.data.model
 
 import android.os.Parcelable
+import io.telereso.kmp.annotations.Builder
 import io.telereso.kmp.annotations.FlutterExport
 import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
 
 
 @FlutterExport
 @Parcelize
+@Builder
+@Serializable
 data class Pokemon(
     val id: Int,
-    val name: String,
-    val image: String,
-    val type: String
-) : Parcelable
+    var name: String,
+    var image: String,
+    var type: String,
+    var test: String? = null
+) : Parcelable {
+    companion object {
+        fun builder(): PokemonBuilder {
+            return PokemonBuilder(1, "", "", "")
+        }
+    }
+}

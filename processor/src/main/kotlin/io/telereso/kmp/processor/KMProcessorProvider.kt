@@ -27,8 +27,11 @@ package io.telereso.kmp.processor
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.validate
+import io.telereso.kmp.annotations.Builder
 import io.telereso.kmp.annotations.FlutterExport
 import io.telereso.kmp.annotations.ReactNativeExport
+import io.telereso.kmp.processor.builder.BuilderSymbolValidator
+import io.telereso.kmp.processor.builder.BuilderVisitor
 import io.telereso.kmp.processor.flutter.FlutterModelSymbolValidator
 import io.telereso.kmp.processor.flutter.FlutterModelVisitor
 import io.telereso.kmp.processor.model.ModelSymbolValidator
@@ -55,12 +58,14 @@ class KMPModelProcessor(
     private val flutterValidator = FlutterModelSymbolValidator(logger)
     private val modelValidator = ModelSymbolValidator(logger)
     private val reactNativeValidator = ReactNativeSymbolValidator(logger)
+    private val builderValidator = BuilderSymbolValidator(logger)
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         logger.info("KMPModelProcessor was invoked.")
         return processModel(resolver, packageName) +
                 processFlutter(resolver, packageName) +
-                processReactNative(resolver, packageName)
+                processReactNative(resolver, packageName) +
+                processBuilder(resolver, packageName)
     }
 
     private fun processModel(resolver: Resolver, packageName: String?): List<KSAnnotated> {
@@ -69,7 +74,10 @@ class KMPModelProcessor(
 
         if (annotationName != null) {
             val resolved = resolver.getSymbolsWithAnnotation(annotationName).toList()     // 1
-            val validatedSymbols = resolved.filter { it.validate() }.toList()     // 2
+            val validatedSymbols = resolved.filter {
+                it.validate()
+                true
+            }.toList()     // 2
             val dependencies = Dependencies(false, *resolver.getAllFiles().toList().toTypedArray())
             val visitor = ModelVisitor(codeGenerator, dependencies, packageName)
             var isUtilFileGenerated = false
@@ -78,7 +86,7 @@ class KMPModelProcessor(
                 modelValidator.isValid(it)
             }.forEach {
                 it.accept(visitor, Unit)
-                if(!isUtilFileGenerated){
+                if (!isUtilFileGenerated) {
                     isUtilFileGenerated = true
                     visitor.shouldGenerateUtilFile = false
                 }
@@ -117,11 +125,34 @@ class KMPModelProcessor(
             val resolved = resolver.getSymbolsWithAnnotation(annotationName).toList()     // 1
             val validatedSymbols = resolved.filter { it.validate() }.toList()     // 2
             val dependencies = Dependencies(false, *resolver.getAllFiles().toList().toTypedArray())
-            val visitor = ReactNativeMangerVisitor(logger,codeGenerator, dependencies, packageName)
+            val visitor = ReactNativeMangerVisitor(logger, codeGenerator, dependencies, packageName)
 
             validatedSymbols.filter {
                 reactNativeValidator.isValid(it)
                 true
+            }.forEach {
+                it.accept(visitor, Unit)
+            }
+            unresolvedSymbols = resolved - validatedSymbols.toSet()     //4
+        }
+        return unresolvedSymbols
+    }
+
+    private fun processBuilder(resolver: Resolver, packageName: String?): List<KSAnnotated> {
+        var unresolvedSymbols: List<KSAnnotated> = emptyList()
+        val annotationName = Builder::class.qualifiedName
+
+        if (annotationName != null) {
+            val resolved = resolver.getSymbolsWithAnnotation(annotationName).toList()     // 1
+            val validatedSymbols = resolved.filter {
+                it.validate()
+                true
+            }.toList()     // 2
+            val dependencies = Dependencies(false, *resolver.getAllFiles().toList().toTypedArray())
+            val visitor = BuilderVisitor(codeGenerator, dependencies, packageName)
+
+            validatedSymbols.filter {
+                builderValidator.isValid(it)
             }.forEach {
                 it.accept(visitor, Unit)
             }

@@ -22,21 +22,17 @@
  * SOFTWARE.
  */
 
-package io.telereso.kmp.processor.model
+package io.telereso.kmp.processor.builder
 
-import com.google.devtools.ksp.isInternal
+import com.google.devtools.ksp.getConstructors
+import com.google.devtools.ksp.isPrivate
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.validate
-import io.telereso.kmp.annotations.SkipJsonConverters
 
-class ModelSymbolValidator(private val logger: KSPLogger) {
+class BuilderSymbolValidator(private val logger: KSPLogger) {
     fun isValid(symbol: KSAnnotated): Boolean {
         return symbol is KSClassDeclaration
-                && !symbol.isInternal()
-                && !symbol
-            .annotations.map { s -> s.toString() }.toList()
-            .contains("@${SkipJsonConverters::class.simpleName}")
+                && symbol.getConstructors().firstOrNull()?.isPrivate() != true
     }
 }
