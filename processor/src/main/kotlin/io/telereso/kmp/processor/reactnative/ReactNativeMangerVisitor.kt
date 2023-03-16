@@ -42,7 +42,8 @@ class ReactNativeMangerVisitor(
     private val logger: KSPLogger,
     private val codeGenerator: CodeGenerator,
     private val dependencies: Dependencies,
-    val packageName: String? = null
+    private val scope: String? = null,
+    private val packageName: String? = null
 ) : KSVisitorVoid() {
     private val skipFunctions = listOf("equals", "hashCode", "toString")
     private val skipClasses = listOf("CommonFlow","String","Boolean","Int" , "Unit" )
@@ -363,7 +364,7 @@ class ReactNativeMangerVisitor(
             |  '- You rebuilt the app after installing the package\n' +
             |  '- You are not using Expo Go\n';
             |
-            |const ${projectName.snakeToUpperCamelCase()}Models = require('$projectName-models').${modelPackage};
+            |const ${projectName.snakeToUpperCamelCase()}Models = require('${scope?.let { "@$it/" } ?: ""}$projectName-models').${modelPackage};
             |
             |
             |const $className = NativeModules.${className}

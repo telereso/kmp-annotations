@@ -45,6 +45,7 @@ class KMProcessorProvider : SymbolProcessorProvider {
         return KMPModelProcessor(
             logger = environment.logger,
             codeGenerator = environment.codeGenerator,
+            scope = environment.options["scope"],
             packageName = environment.options["packageName"]
         )
     }
@@ -53,6 +54,7 @@ class KMProcessorProvider : SymbolProcessorProvider {
 class KMPModelProcessor(
     private val logger: KSPLogger,
     private val codeGenerator: CodeGenerator,
+    private val scope: String? = null,
     private val packageName: String? = null,
 ) : SymbolProcessor {
     private val flutterValidator = FlutterModelSymbolValidator(logger)
@@ -64,7 +66,7 @@ class KMPModelProcessor(
         logger.info("KMPModelProcessor was invoked.")
         return processModel(resolver, packageName) +
                 processFlutter(resolver, packageName) +
-                processReactNative(resolver, packageName) +
+                processReactNative(resolver, scope, packageName) +
                 processBuilder(resolver, packageName)
     }
 
@@ -117,7 +119,11 @@ class KMPModelProcessor(
         return unresolvedSymbols
     }
 
-    private fun processReactNative(resolver: Resolver, packageName: String?): List<KSAnnotated> {
+    private fun processReactNative(
+        resolver: Resolver,
+        scope: String?,
+        packageName: String?
+    ): List<KSAnnotated> {
         var unresolvedSymbols: List<KSAnnotated> = emptyList()
         val annotationName = ReactNativeExport::class.qualifiedName
 
@@ -125,7 +131,8 @@ class KMPModelProcessor(
             val resolved = resolver.getSymbolsWithAnnotation(annotationName).toList()     // 1
             val validatedSymbols = resolved.filter { it.validate() }.toList()     // 2
             val dependencies = Dependencies(false, *resolver.getAllFiles().toList().toTypedArray())
-            val visitor = ReactNativeMangerVisitor(logger, codeGenerator, dependencies, packageName)
+            val visitor =
+                ReactNativeMangerVisitor(logger, codeGenerator, dependencies, scope, packageName)
 
             validatedSymbols.filter {
                 reactNativeValidator.isValid(it)
