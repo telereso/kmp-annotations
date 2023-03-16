@@ -24,6 +24,7 @@
 
 package io.telereso.kmp
 
+import com.google.devtools.ksp.gradle.KspExtension
 import com.google.devtools.ksp.gradle.KspGradleSubplugin
 import io.telereso.kmp.TeleresoKmpExtension.Companion.teleresoKmp
 import org.gradle.api.Plugin
@@ -38,7 +39,13 @@ class KmpPlugin : Plugin<Project> {
 
         pluginManager.apply(KspGradleSubplugin::class.java)
 
-        val annotationsVersion = "0.0.14"
+        val kspExtension = extensions.getByType(KspExtension::class.java)
+        val scope = getScope()?.let { scope ->
+            kspExtension.arg("scope", scope)
+            scope
+        }
+
+        val annotationsVersion = "0.0.15"
         dependencies.add("commonMainImplementation", "io.telereso.kmp:annotations:$annotationsVersion")
         dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:$annotationsVersion")
 //        dependencies.add("commonMainImplementation", project(":annotations"))
@@ -118,7 +125,7 @@ class KmpPlugin : Plugin<Project> {
             val projectPackageName = getProjectName()
             val baseDir = "$rootDir".split("/react-native")[0]
 
-            log("Creating Lib Tasks fro project $projectPackageName")
+            log("Creating Lib Tasks for project $projectPackageName ${scope?.let { "with scope $it" }}")
 
             // Android
             val copyGeneratedFilesAndroidTask =
@@ -212,6 +219,18 @@ fun Project.getProjectName(): String {
             name
         }
     }.toString()
+}
+
+fun Project.getScope(): String? {
+    val extraKey = "scope"
+    return when {
+        extra.has(extraKey) -> extra.get(extraKey)
+        rootProject.extra.has(extraKey) -> rootProject.extra.get(extraKey)
+        else -> {
+            log("`scope` was not found in project's extras, no scope will be added for js imports")
+            null
+        }
+    }?.toString()
 }
 
 fun Project.log(message: String) {
