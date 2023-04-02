@@ -533,7 +533,7 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  AnnotationsClient: 76329c5188207ed03cce8a7873c0402bef613330
+  AnnotationsClient: 3709bb7d7249ab4879d4641e2cd5866396015801
   boost: a7c83b31436843459a1961bfd74b96033dc77234
   CocoaAsyncSocket: 065fd1e645c7abab64f7a6a2007a48038fdc6a99
   DoubleConversion: 5189b271737e1565bdce30deb4a08d647e3f5f54

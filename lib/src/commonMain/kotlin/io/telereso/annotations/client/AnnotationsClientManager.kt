@@ -11,6 +11,7 @@ import io.telereso.annotations.client.remote.AnnotationsApiServiceImpl
 import io.telereso.annotations.client.repositories.AnnotationsClientRepository
 import io.ktor.client.plugins.*
 import io.ktor.client.statement.*
+import io.telereso.annotations.models.RocketLaunchArray
 import io.telereso.annotations.models.RocketLaunchList
 import io.telereso.kmp.annotations.ReactNativeExport
 import io.telereso.kmp.annotations.SkipReactNativeExport
@@ -157,19 +158,25 @@ class AnnotationsClientManager private constructor(
         }
     }
 
-    fun getRocketLaunchesFlow(param: String = ""): Task<CommonFlow<List<RocketLaunch>>> {
+    fun getRocketLaunchFlow(param: String = ""): Task<CommonFlow<List<RocketLaunch>>> {
         return Task.execute {
             repo.getRocketLaunchesFlow()
         }
     }
 
-    fun getRocketLaunchListFlow(rocketLaunch: RocketLaunch): Task<CommonFlow<RocketLaunchList>> {
+    fun getRocketLaunchArrayFlow(param: String = ""): Task<CommonFlow<RocketLaunchArray>> {
+        return Task.execute {
+            repo.getRocketLaunchesFlow().map { RocketLaunchArray(it.toTypedArray()) }.asCommonFlow()
+        }
+    }
+
+    fun getRocketLaunchListFlow(param: String = ""): Task<CommonFlow<RocketLaunchList>> {
         return Task.execute {
             repo.getRocketLaunchesFlow().map { RocketLaunchList(it) }.asCommonFlow()
         }
     }
 
-    fun getRocketLaunchFlow(param: String = ""): Task<CommonFlow<Array<RocketLaunch>>> {
+    fun getArrayRocketLaunchFlow(rocketLaunch: RocketLaunch): Task<CommonFlow<Array<RocketLaunch>>> {
         return Task.execute {
             repo.getRocketLaunchesFlow().map { it.toTypedArray() }.asCommonFlow()
         }

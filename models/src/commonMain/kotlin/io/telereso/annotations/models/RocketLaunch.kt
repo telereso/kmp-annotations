@@ -42,6 +42,25 @@ data class RocketLaunch(
 data class RocketLaunchList(val list: List<RocketLaunch>)
 
 @Serializable
+@JsExport
+data class RocketLaunchArray(val array: Array<RocketLaunch>) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+
+        other as RocketLaunchArray
+
+        if (!array.contentEquals(other.array)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return array.contentHashCode()
+    }
+}
+
+@Serializable
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 data class Rocket(

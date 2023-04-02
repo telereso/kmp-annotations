@@ -70,49 +70,67 @@ class AnnotationsClientModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
-  fun getRocketLaunchesFlow(param: String = "", promise: Promise) {
-   manager.getRocketLaunchesFlow(param).onSuccess { res -> 
-     val emitter =
-          reactApplicationContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-     Task.execute {
-       res.collect {
-           emitter.emit("${NAME}_getRocketLaunchesFlow_1ps", RocketLaunch.toJson(it.toTypedArray()))
-       }
-       promise.resolve(true)
-     }.onFailure {
-       promise.reject(it)
-     }
-   }.onFailure {
-     promise.reject(it)
-   }
-  }
-
-  @ReactMethod
-  fun getRocketLaunchListFlow(rocketLaunch: String, promise: Promise) {
-   manager.getRocketLaunchListFlow(RocketLaunch.fromJson(rocketLaunch)).onSuccess { res -> 
-     val emitter =
-          reactApplicationContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-     Task.execute {
-       res.collect {
-           emitter.emit("${NAME}_getRocketLaunchListFlow_1rr", it.toJson())
-       }
-       promise.resolve(true)
-     }.onFailure {
-       promise.reject(it)
-     }
-   }.onFailure {
-     promise.reject(it)
-   }
-  }
-
-  @ReactMethod
   fun getRocketLaunchFlow(param: String = "", promise: Promise) {
-   manager.getRocketLaunchFlow(param).onSuccess { res -> 
+   manager.getRocketLaunchArrayFlow(param).onSuccess { res -> 
      val emitter =
           reactApplicationContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
      Task.execute {
        res.collect {
-           emitter.emit("${NAME}_getRocketLaunchFlow_1ps", RocketLaunch.toJson(it))
+           emitter.emit("${NAME}_getRocketLaunchFlow_1ps", it.toJson())
+       }
+       promise.resolve(true)
+     }.onFailure {
+       promise.reject(it)
+     }
+   }.onFailure {
+     promise.reject(it)
+   }
+  }
+
+  @ReactMethod
+  fun getRocketLaunchArrayFlow(param: String = "", promise: Promise) {
+   manager.getRocketLaunchArrayFlow(param).onSuccess { res -> 
+     val emitter =
+          reactApplicationContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+     Task.execute {
+       res.collect {
+           emitter.emit("${NAME}_getRocketLaunchArrayFlow_1ps", it.toJson())
+       }
+       promise.resolve(true)
+     }.onFailure {
+       promise.reject(it)
+     }
+   }.onFailure {
+     promise.reject(it)
+   }
+  }
+
+  @ReactMethod
+  fun getRocketLaunchListFlow(param: String = "", promise: Promise) {
+   manager.getRocketLaunchListFlow(param).onSuccess { res -> 
+     val emitter =
+          reactApplicationContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+     Task.execute {
+       res.collect {
+           emitter.emit("${NAME}_getRocketLaunchListFlow_1ps", it.toJson())
+       }
+       promise.resolve(true)
+     }.onFailure {
+       promise.reject(it)
+     }
+   }.onFailure {
+     promise.reject(it)
+   }
+  }
+
+  @ReactMethod
+  fun getArrayRocketLaunchFlow(rocketLaunch: String, promise: Promise) {
+   manager.getArrayRocketLaunchFlow(RocketLaunch.fromJson(rocketLaunch)).onSuccess { res -> 
+     val emitter =
+          reactApplicationContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+     Task.execute {
+       res.collect {
+           emitter.emit("${NAME}_getArrayRocketLaunchFlow_1rr", RocketLaunch.toJson(it))
        }
        promise.resolve(true)
      }.onFailure {

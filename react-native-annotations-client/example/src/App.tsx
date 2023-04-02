@@ -2,15 +2,17 @@ import * as React from 'react';
 
 import { StyleSheet, View, Text } from 'react-native';
 import {
-  fetchLaunchRockets, getFirstRocketLaunchFlow,
+  fetchLaunchRockets,
+  getFirstRocketLaunchFlow,
   getFlow,
-  getRocketLaunchFlow, getRocketLaunchListFlow,
+  getRocketLaunchFlow,
 } from 'react-native-annotations-client';
 
 const AnnotationsModels = require('@telereso/annotations-models').io.telereso
   .annotations.models;
 
 const RocketLaunch = AnnotationsModels.RocketLaunch;
+const RocketLaunchArray = AnnotationsModels.RocketLaunchArray;
 
 export default function App() {
   const [rockets, setRockets] = React.useState<Array<typeof RocketLaunch> | []>(
@@ -37,8 +39,8 @@ export default function App() {
 
     const l2 = getRocketLaunchFlow(
       '',
-      (data) => {
-        console.log('getRocketLaunchFlow', data[0]);
+      (data: typeof RocketLaunchArray) => {
+        console.log('getRocketLaunchFlow', data.array[0]);
       },
       (err) => {
         console.log(err);
