@@ -44,50 +44,51 @@ import coil.request.Disposable
 import com.yourcompany.fragmentfactory.R.layout
 import com.yourcompany.fragmentfactory.data.model.Pokemon
 import com.yourcompany.fragmentfactory.databinding.FragmentDetailBinding
+import io.telereso.kmp.annotations.ReactNativeExport
 
 class DetailFragment : Fragment() {
 
-  override fun onCreateView(
-    inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-  ): View? {
-    return inflater.inflate(layout.fragment_detail, container, false)
-  }
-
-  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-    with(FragmentDetailBinding.bind(view)) {
-      name.text = pokemon.name
-      type.text = pokemon.type
-      image.load(pokemon.image).also {
-        disposables.add(it)
-      }
-    }
-  }
-
-  override fun onDestroyView() {
-    super.onDestroyView()
-    with(disposables) {
-      forEach {
-        it.dispose()
-      }
-      clear()
-    }
-  }
-
-  private val pokemon: Pokemon by lazy {
-    arguments?.getParcelable<Pokemon>(KEY_POKEMON)
-      ?: throw IllegalStateException("Pokemon data was not passed")
-  }
-
-  private val disposables = mutableListOf<Disposable>()
-
-  companion object {
-    const val KEY_POKEMON = "pokemon"
-
-    fun createDetailFragment(pokemon: Pokemon) = DetailFragment().apply {
-      arguments = Bundle().apply {
-        putParcelable(KEY_POKEMON, pokemon)
-      }
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(layout.fragment_detail, container, false)
     }
 
-  }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        with(FragmentDetailBinding.bind(view)) {
+            name.text = pokemon.name
+            type.text = pokemon.type
+            image.load(pokemon.image).also {
+                disposables.add(it)
+            }
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        with(disposables) {
+            forEach {
+                it.dispose()
+            }
+            clear()
+        }
+    }
+
+    private val pokemon: Pokemon by lazy {
+        arguments?.getParcelable<Pokemon>(KEY_POKEMON)
+            ?: throw IllegalStateException("Pokemon data was not passed")
+    }
+
+    private val disposables = mutableListOf<Disposable>()
+
+    companion object {
+        const val KEY_POKEMON = "pokemon"
+
+        fun createDetailFragment(pokemon: Pokemon) = DetailFragment().apply {
+            arguments = Bundle().apply {
+                putParcelable(KEY_POKEMON, pokemon)
+            }
+        }
+
+    }
 }

@@ -45,11 +45,14 @@ class KmpPlugin : Plugin<Project> {
             scope
         }
 
-        val annotationsVersion = "0.0.15"
-        dependencies.add("commonMainImplementation", "io.telereso.kmp:annotations:$annotationsVersion")
-        dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:$annotationsVersion")
-//        dependencies.add("commonMainImplementation", project(":annotations"))
-//        dependencies.add("kspCommonMainMetadata", project(":processor"))
+        if (findProperty("teleresoKmpDevelopmentMode")?.toString()?.toBoolean() == true) {
+            dependencies.add("commonMainImplementation", project(":annotations"))
+            dependencies.add("kspCommonMainMetadata", project(":processor"))
+        } else {
+            val annotationsVersion = "0.0.15"
+            dependencies.add("commonMainImplementation", "io.telereso.kmp:annotations:$annotationsVersion")
+            dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:$annotationsVersion")
+        }
 
         val teleresoKmp = teleresoKmp()
 

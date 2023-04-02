@@ -15,3 +15,6 @@ deploy.env
 secret.properties
 *.g.kt
 /seceret_key
+
+**/Pods
+**/node_modules

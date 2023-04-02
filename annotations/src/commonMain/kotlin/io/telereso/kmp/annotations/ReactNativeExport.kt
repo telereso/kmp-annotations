@@ -26,6 +26,6 @@ package io.telereso.kmp.annotations
 
 import kotlin.annotation.AnnotationRetention.SOURCE
 
-@Target(AnnotationTarget.CLASS)
+@Target(AnnotationTarget.CLASS,AnnotationTarget.FUNCTION)
 @Retention(SOURCE)
 annotation class ReactNativeExport()

@@ -91,6 +91,10 @@ fun KSTypeReference.jsType(hasDefault: Boolean): String {
     return resolveJsType(t.declaration.simpleName.asString(), t.isMarkedNullable, hasDefault).removeSuffix("?")
 }
 
+fun String?.jsTypeClass(hasDefault: Boolean = false): String {
+    return jsType(hasDefault).removePrefix("typeof ")
+}
+
 fun String?.jsType(hasDefault: Boolean = false): String {
     val isNullable = this?.endsWith("?") ?: false
     return resolveJsType(this, isNullable, hasDefault).removeSuffix("?")
