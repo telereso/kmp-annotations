@@ -3,7 +3,6 @@ plugins {
     kotlin("plugin.serialization")
     id("com.android.library")
     id("org.jetbrains.dokka")
-    id("maven-publish")
     id("io.telereso.kmp")
 }
 
@@ -27,17 +26,6 @@ project.ext["artifactName"] = "${project.name}"
 group = "$groupId.${project.name}"
 version = project.findProperty("publishVersion") ?: "0.0.1"
 
-publishing {
-    repositories {
-        maven {
-            url = uri("${project.findProperty("artifactoryUrl") ?: "test"}/mobile-gradle")
-            credentials {
-                username = (project.findProperty("artifactoryUser") ?: "test") as String
-                password = (project.findProperty("artifactoryPassword") ?: "test") as String
-            }
-        }
-    }
-}
 
 kotlin {
     android {

@@ -13,7 +13,7 @@ class AnnotationsClient: RCTEventEmitter {
         }
     }
     // uncomment for testing, handle builder constructor if changed 
-    var a = AnnotationsClientManager.Builder(databaseDriverFactory: DatabaseDriverFactory()).build()
+    // var a = AnnotationsClientManager.Builder(databaseDriverFactory: DatabaseDriverFactory()).build()
     var manager = getManger()
 
     private var hasListeners = false;

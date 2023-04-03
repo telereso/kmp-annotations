@@ -11,7 +11,6 @@ plugins {
     id("org.jetbrains.kotlinx.kover") version "0.6.1"
     id("com.adarshr.test-logger") version "3.2.0"
     id("org.jetbrains.dokka")
-    id("maven-publish")
     id("com.codingfeline.buildkonfig")
     id("io.telereso.kmp")
 }
@@ -24,17 +23,6 @@ val scope: String by rootProject.extra
 group = "$groupId.${project.name}"
 version = project.findProperty("publishVersion") ?: "0.0.1"
 
-publishing {
-    repositories {
-        maven {
-            url = uri("${project.findProperty("artifactoryUrl") ?: "test"}/mobile-gradle")
-            credentials {
-                username = (project.findProperty("artifactoryUser") ?: "test") as String
-                password = (project.findProperty("artifactoryPassword") ?: "test") as String
-            }
-        }
-    }
-}
 
 // Android
 val buildToolsVersion: String by rootProject.extra
