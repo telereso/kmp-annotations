@@ -50,7 +50,7 @@ internal class AnnotationsClientRepository(
         return dao.getFirstRocketLaunches()
     }
 
-    suspend fun getRocketLaunchesFlow(): CommonFlow<List<RocketLaunch>> {
+    suspend fun getRocketLaunchesFlow(param: String = ""): CommonFlow<List<RocketLaunch>> {
         return dao.getRocketLaunchesFlow()
     }
 }

@@ -190,6 +190,7 @@ kotlin {
         val coroutinesVersion = "1.6.4"
         val napierVersion = "2.6.1"
         val commonMain by getting {
+            kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
             dependencies {
                 implementation(project(":annotations"))
                 api(project(":annotations-models"))
@@ -588,6 +589,6 @@ testlogger {
 }
 
 teleresoKmp {
-    disableJsonConverters = true
+//    disableJsonConverters = true
 //    disableReactExport = true
 }

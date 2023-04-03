@@ -5,7 +5,7 @@ import {
   fetchLaunchRockets,
   getFirstRocketLaunchFlow,
   getFlow,
-  getRocketLaunchFlow,
+  getRocketLaunchesFlow,
 } from 'react-native-annotations-client';
 
 const AnnotationsModels = require('@telereso/annotations-models').io.telereso
@@ -37,7 +37,7 @@ export default function App() {
       }
     );
 
-    const l2 = getRocketLaunchFlow(
+    const l2 = getRocketLaunchesFlow(
       '',
       (data: typeof RocketLaunchArray) => {
         console.log('getRocketLaunchFlow', data.array[0]);

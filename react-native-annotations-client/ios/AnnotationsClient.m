@@ -21,15 +21,7 @@ RCT_EXTERN_METHOD(getFirstRocketLaunchFlow:
                  (RCTPromiseResolveBlock)resolve
                  withRejecter:(RCTPromiseRejectBlock)reject)
 
-RCT_EXTERN_METHOD(getRocketLaunchFlow:(NSString)param
-                 withResolver:(RCTPromiseResolveBlock)resolve
-                 withRejecter:(RCTPromiseRejectBlock)reject)
-
-RCT_EXTERN_METHOD(getRocketLaunchArrayFlow:(NSString)param
-                 withResolver:(RCTPromiseResolveBlock)resolve
-                 withRejecter:(RCTPromiseRejectBlock)reject)
-
-RCT_EXTERN_METHOD(getRocketLaunchListFlow:(NSString)param
+RCT_EXTERN_METHOD(getRocketLaunchesFlow:(NSString)param
                  withResolver:(RCTPromiseResolveBlock)resolve
                  withRejecter:(RCTPromiseRejectBlock)reject)
 

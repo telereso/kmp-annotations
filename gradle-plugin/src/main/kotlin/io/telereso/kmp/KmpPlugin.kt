@@ -137,13 +137,13 @@ class KmpPlugin : Plugin<Project> {
             val cleanAndroidGeneratedFiles = "cleanAndroidGeneratedFiles"
             tasks.create<Delete>(cleanAndroidGeneratedFiles) {
                 group = "Clean"
-                delete(buildDir.resolve("generated/ksp/metadata/commonMain/kotlin"))
+                delete(buildDir.resolve("generated/ksp/metadata/commonMain/rn-kotlin"))
             }
 
             tasks.create<Copy>(copyGeneratedFilesAndroidTask) {
                 log("Copying ksp generated reactNative android files")
 
-                from("${buildDir.path}/generated/ksp/metadata/commonMain/kotlin/")
+                from("${buildDir.path}/generated/ksp/metadata/commonMain/resources/rn-kotlin/")
                 into(
                     "${baseDir}/react-native-${
                         projectPackageName.replace(
@@ -190,8 +190,8 @@ class KmpPlugin : Plugin<Project> {
                 // Android tasks
                 tasks.getByName(copyGeneratedFilesAndroidTask)
                     .dependsOn("kspCommonMainKotlinMetadata")
-                tasks.getByName(copyGeneratedFilesAndroidTask)
-                    .finalizedBy(cleanAndroidGeneratedFiles)
+//                tasks.getByName(copyGeneratedFilesAndroidTask)
+//                    .finalizedBy(cleanAndroidGeneratedFiles)
 
                 // iOS tasks
                 tasks.getByName(copyGeneratedFilesIosTask)

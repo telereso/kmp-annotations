@@ -1,5 +1,6 @@
 package io.telereso.annotations.models
 
+import io.telereso.kmp.annotations.ListWrappers
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.js.ExperimentalJsExport
@@ -13,6 +14,7 @@ import kotlin.js.JsExport
 @Serializable
 @OptIn(ExperimentalJsExport::class)
 @JsExport
+@ListWrappers
 data class RocketLaunch(
     /**
      * The @SerialName annotation allows you to redefine field names,
@@ -37,28 +39,6 @@ data class RocketLaunch(
     @SerialName("links")
     val links: Links? = null,
 )
-
-@Serializable
-data class RocketLaunchList(val list: List<RocketLaunch>)
-
-@Serializable
-@JsExport
-data class RocketLaunchArray(val array: Array<RocketLaunch>) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other == null || this::class != other::class) return false
-
-        other as RocketLaunchArray
-
-        if (!array.contentEquals(other.array)) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        return array.contentHashCode()
-    }
-}
 
 @Serializable
 @OptIn(ExperimentalJsExport::class)

@@ -22,7 +22,6 @@ const AnnotationsClient = NativeModules.AnnotationsClient
     
 const RocketLaunchArray = AnnotationsModels.RocketLaunchArray;
 const RocketLaunch = AnnotationsModels.RocketLaunch;
-const RocketLaunchList = AnnotationsModels.RocketLaunchList;
 // @ts-ignore
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const RocketLaunchArrayFromJson = AnnotationsModels.RocketLaunchArrayFromJson;
@@ -30,13 +29,6 @@ const RocketLaunchArrayFromJson = AnnotationsModels.RocketLaunchArrayFromJson;
 // @ts-ignore
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const RocketLaunchArrayFromJsonArray = AnnotationsModels.RocketLaunchArrayFromJsonArray;
-// @ts-ignore
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const RocketLaunchListFromJson = AnnotationsModels.RocketLaunchListFromJson;
-
-// @ts-ignore
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const RocketLaunchListFromJsonArray = AnnotationsModels.RocketLaunchListFromJsonArray;
 // @ts-ignore
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const RocketLaunchFromJson = AnnotationsModels.RocketLaunchFromJson;
@@ -104,47 +96,15 @@ export function getFirstRocketLaunchFlow( stream: (data: typeof RocketLaunch) =>
 }
 
 
-export function getRocketLaunchFlow(param: String = '', stream: (data: typeof RocketLaunchArray) => void, error: (err: any) => void): EmitterSubscription {
+export function getRocketLaunchesFlow(param: String = '', stream: (data: typeof RocketLaunchArray) => void, error: (err: any) => void): EmitterSubscription {
    const eventEmitter = new NativeEventEmitter(AnnotationsClient);
   let eventListener = eventEmitter.addListener(
-    'AnnotationsClient_getRocketLaunchFlow_1ps',
+    'AnnotationsClient_getRocketLaunchesFlow_1ps',
     (data: string) => {
       stream(RocketLaunchArrayFromJson(RocketLaunchArray.Companion, data));
     }
   );
-  AnnotationsClient.getRocketLaunchFlow(param).catch((e: any) => {
-    error(e);
-  }); 
-  return eventListener;
-
-}
-
-
-export function getRocketLaunchArrayFlow(param: String = '', stream: (data: typeof RocketLaunchArray) => void, error: (err: any) => void): EmitterSubscription {
-   const eventEmitter = new NativeEventEmitter(AnnotationsClient);
-  let eventListener = eventEmitter.addListener(
-    'AnnotationsClient_getRocketLaunchArrayFlow_1ps',
-    (data: string) => {
-      stream(RocketLaunchArrayFromJson(RocketLaunchArray.Companion, data));
-    }
-  );
-  AnnotationsClient.getRocketLaunchArrayFlow(param).catch((e: any) => {
-    error(e);
-  }); 
-  return eventListener;
-
-}
-
-
-export function getRocketLaunchListFlow(param: String = '', stream: (data: typeof RocketLaunchList) => void, error: (err: any) => void): EmitterSubscription {
-   const eventEmitter = new NativeEventEmitter(AnnotationsClient);
-  let eventListener = eventEmitter.addListener(
-    'AnnotationsClient_getRocketLaunchListFlow_1ps',
-    (data: string) => {
-      stream(RocketLaunchListFromJson(RocketLaunchList.Companion, data));
-    }
-  );
-  AnnotationsClient.getRocketLaunchListFlow(param).catch((e: any) => {
+  AnnotationsClient.getRocketLaunchesFlow(param).catch((e: any) => {
     error(e);
   }); 
   return eventListener;

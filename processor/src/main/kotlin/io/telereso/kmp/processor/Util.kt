@@ -26,6 +26,20 @@ package io.telereso.kmp.processor
 
 import com.google.devtools.ksp.closestClassDeclaration
 import com.google.devtools.ksp.symbol.*
+import io.telereso.kmp.processor.reactnative.CLASS_COMMON_FLOW
+
+const val PREFIX_TASK = "Task<"
+const val PREFIX_TASK_ARRAY = "Task<Array<"
+const val PREFIX_TASK_COMMON_FLOW = "Task<$CLASS_COMMON_FLOW<"
+const val PREFIX_COMMON_FLOW_LIST = "$CLASS_COMMON_FLOW<List<"
+const val PREFIX_COMMON_FLOW_ARRAY = "$CLASS_COMMON_FLOW<Array<"
+val REGEX_TASK = Regex("(?<=Task<)(.*?)(?=>)")
+val REGEX_TASK_ARRAY = Regex("(?<=Task<Array<)(.*?)(?=>)")
+val REGEX_COMMON_FLOW = Regex("(?<=$CLASS_COMMON_FLOW<)(.*?)(?=>)")
+val REGEX_COMMON_FLOW_LIST = Regex("(?<=$PREFIX_COMMON_FLOW_LIST)(.*?)(?=>>)")
+val REGEX_COMMON_FLOW_ARRAY = Regex("(?<=$PREFIX_COMMON_FLOW_ARRAY)(.*?)(?=>>)")
+
+val skipFunctions = listOf("equals", "hashCode", "toString", "", "<init>")
 
 
 val camelRegex = "(?<=[a-zA-Z])[A-Z]".toRegex()
@@ -110,6 +124,22 @@ private fun resolveJsType(type: String?, isNullable: Boolean, hasDefault: Boolea
         "Long" -> if (isNullable || hasDefault) "Number = 0" else "number"
         else -> "typeof $type"
     }
+}
+
+fun KSFunctionDeclaration.getCommonFlowListClass(): String? {
+    return REGEX_COMMON_FLOW_LIST.find(returnType?.resolve().toString())?.value
+}
+
+fun KSFunctionDeclaration.getCommonFlowArrayClass(): String? {
+    return REGEX_COMMON_FLOW_ARRAY.find(returnType?.resolve().toString())?.value
+}
+
+fun KSFunctionDeclaration.getListFlowName(): String {
+    return simpleName.asString().removeSuffix("Flow").plus("ListFlow")
+}
+
+fun KSFunctionDeclaration.getArrayFlowName(): String {
+    return simpleName.asString().removeSuffix("Flow").plus("ArrayFlow")
 }
 
 //private fun resolveJsType(type: String?, isNullable: Boolean, hasDefault: Boolean): String {

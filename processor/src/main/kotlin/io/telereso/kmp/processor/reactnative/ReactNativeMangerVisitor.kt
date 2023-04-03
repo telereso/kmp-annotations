@@ -47,7 +47,7 @@ class ReactNativeMangerVisitor(
     private val scope: String? = null,
     private val packageName: String? = null
 ) : KSVisitorVoid() {
-    private val skipFunctions = listOf("equals", "hashCode", "toString", "", "<init>")
+
     private val skipClasses =
         listOf(CLASS_EMITTER_SUBSCRIPTION, "void", "CommonFlow", "String", "Boolean", "Int", "Unit")
 
@@ -76,18 +76,24 @@ class ReactNativeMangerVisitor(
         val snakeClassName = className.camelToSnakeCase()
         val outputStream: OutputStream = codeGenerator.createNewFile(
             dependencies = Dependencies(false),
-            "${packageString}.rn",
+            "rn-kotlin.${packageString}.rn",
             fileName = "${className}Module",
-            extensionName = "kt"
+            extensionName = "g.kt"
         )
 
         val enums = hashSetOf<String>()
+        val functionsImports = mutableListOf<String>()
 
         val modelImports = classDeclaration.getAllFunctions().mapNotNull {
             if (it.getVisibility() == Visibility.PUBLIC &&
                 !it.skipReactNative() &&
                 !skipFunctions.contains(it.simpleName.asString())
             ) {
+                it.getCommonFlowListClass()?.let { _ ->
+                    functionsImports.add(it.getListFlowName())
+                    functionsImports.add(it.getArrayFlowName())
+                }
+
                 it.getMethodBodyAndroid(enums).second
             } else null
         }
@@ -114,12 +120,17 @@ class ReactNativeMangerVisitor(
         val modelImportString =
             modelImports.joinToString("\n") { "import ${modelsPackageString}.models.$it" }
 
+        val importExtensionFunctions = functionsImports.joinToString("\n") {
+            "import $packageString.$it"
+        }
+
         outputStream.write(
             """
             |package $packageString.rn
             |
             |import $packageString.$originalClassName
             |import $modelsPackageString.*
+            |$importExtensionFunctions
             |import com.facebook.react.bridge.*
             |import com.facebook.react.modules.core.DeviceEventManagerModule
             |import kotlin.js.ExperimentalJsExport
@@ -215,7 +226,7 @@ class ReactNativeMangerVisitor(
             |        }
             |    }
             |    // uncomment for testing, handle builder constructor if changed 
-            |    var a = ${className}Manager.Builder(databaseDriverFactory: DatabaseDriverFactory()).build()
+            |    // var a = ${className}Manager.Builder(databaseDriverFactory: DatabaseDriverFactory()).build()
             |    var manager = getManger()
             |
             |    private var hasListeners = false;
@@ -351,6 +362,13 @@ class ReactNativeMangerVisitor(
                     modelToJsonImports.addAll(trip.third)
                 }
                 modelImports.addAll(typedParams)
+
+                it.getCommonFlowListClass()?.let { c->
+                    val arrayClassName = "${c}Array"
+                    modelImports.add(arrayClassName)
+                    modelFromJsonImports.add(arrayClassName)
+                }
+
             }
         }
 
@@ -456,17 +474,6 @@ private fun KSFunctionDeclaration.getParametersSignature(): String {
         parameters.joinToString("") { "${(it.name?.asString() ?: "n")[0]}${it.type.toString()[0]}".lowercase() }
     }"
 }
-
-const val PREFIX_TASK = "Task<"
-const val PREFIX_TASK_ARRAY = "Task<Array<"
-const val PREFIX_TASK_COMMON_FLOW = "Task<$CLASS_COMMON_FLOW<"
-const val PREFIX_COMMON_FLOW_LIST = "$CLASS_COMMON_FLOW<List<"
-const val PREFIX_COMMON_FLOW_ARRAY = "$CLASS_COMMON_FLOW<Array<"
-val REGEX_TASK = Regex("(?<=Task<)(.*?)(?=>)")
-val REGEX_TASK_ARRAY = Regex("(?<=Task<Array<)(.*?)(?=>)")
-val REGEX_COMMON_FLOW = Regex("(?<=$CLASS_COMMON_FLOW<)(.*?)(?=>)")
-val REGEX_COMMON_FLOW_LIST = Regex("(?<=$PREFIX_COMMON_FLOW_LIST)(.*?)(?=>>)")
-val REGEX_COMMON_FLOW_ARRAY = Regex("(?<=$PREFIX_COMMON_FLOW_ARRAY)(.*?)(?=>>)")
 
 private fun KSFunctionDeclaration.getResultAndroid(enums: HashSet<String>): Pair<String, String?> {
 
@@ -936,7 +943,7 @@ private fun KSTypeReference.getDefault(nullability: Nullability): String {
     }
 }
 
-private fun KSFunctionDeclaration.getTypedParametersAndroid(enums: HashSet<String>): String {
+fun KSFunctionDeclaration.getTypedParametersAndroid(enums: HashSet<String>): String {
     return parameters.mapNotNull { p ->
         val t = p.type.resolve()
         val nullabilityString = when (t.nullability) {
@@ -1050,7 +1057,7 @@ private fun KSFunctionDeclaration.getTypedHeaderParametersIosOC(): String {
 
 }
 
-private fun KSFunctionDeclaration.getParametersAndroid(enums: HashSet<String>): String {
+fun KSFunctionDeclaration.getParametersAndroid(enums: HashSet<String>): String {
     return parameters.mapNotNull { p ->
         p.name?.let { name ->
             val type = p.type.resolve()

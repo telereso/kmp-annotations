@@ -2,6 +2,8 @@ package io.telereso.annotations.client.rn
 
 import io.telereso.annotations.client.AnnotationsClientManager
 import io.telereso.annotations.models.*
+import io.telereso.annotations.client.getRocketLaunchesListFlow
+import io.telereso.annotations.client.getRocketLaunchesArrayFlow
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import kotlin.js.ExperimentalJsExport
@@ -70,49 +72,13 @@ class AnnotationsClientModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
-  fun getRocketLaunchFlow(param: String = "", promise: Promise) {
-   manager.getRocketLaunchArrayFlow(param).onSuccess { res -> 
+  fun getRocketLaunchesFlow(param: String = "", promise: Promise) {
+   manager.getRocketLaunchesArrayFlow(param).onSuccess { res -> 
      val emitter =
           reactApplicationContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
      Task.execute {
        res.collect {
-           emitter.emit("${NAME}_getRocketLaunchFlow_1ps", it.toJson())
-       }
-       promise.resolve(true)
-     }.onFailure {
-       promise.reject(it)
-     }
-   }.onFailure {
-     promise.reject(it)
-   }
-  }
-
-  @ReactMethod
-  fun getRocketLaunchArrayFlow(param: String = "", promise: Promise) {
-   manager.getRocketLaunchArrayFlow(param).onSuccess { res -> 
-     val emitter =
-          reactApplicationContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-     Task.execute {
-       res.collect {
-           emitter.emit("${NAME}_getRocketLaunchArrayFlow_1ps", it.toJson())
-       }
-       promise.resolve(true)
-     }.onFailure {
-       promise.reject(it)
-     }
-   }.onFailure {
-     promise.reject(it)
-   }
-  }
-
-  @ReactMethod
-  fun getRocketLaunchListFlow(param: String = "", promise: Promise) {
-   manager.getRocketLaunchListFlow(param).onSuccess { res -> 
-     val emitter =
-          reactApplicationContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-     Task.execute {
-       res.collect {
-           emitter.emit("${NAME}_getRocketLaunchListFlow_1ps", it.toJson())
+           emitter.emit("${NAME}_getRocketLaunchesFlow_1ps", it.toJson())
        }
        promise.resolve(true)
      }.onFailure {

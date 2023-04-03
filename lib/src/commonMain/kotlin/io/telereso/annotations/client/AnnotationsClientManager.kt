@@ -11,9 +11,9 @@ import io.telereso.annotations.client.remote.AnnotationsApiServiceImpl
 import io.telereso.annotations.client.repositories.AnnotationsClientRepository
 import io.ktor.client.plugins.*
 import io.ktor.client.statement.*
-import io.telereso.annotations.models.RocketLaunchArray
-import io.telereso.annotations.models.RocketLaunchList
+import io.telereso.kmp.annotations.ListWrappers
 import io.telereso.kmp.annotations.ReactNativeExport
+import io.telereso.kmp.annotations.SkipListWrappers
 import io.telereso.kmp.annotations.SkipReactNativeExport
 import io.telereso.kmp.core.models.ClientException
 import io.telereso.kmp.core.models.ErrorBody
@@ -34,6 +34,7 @@ import kotlin.native.concurrent.ThreadLocal
 @ExperimentalJsExport
 @JsExport
 @ReactNativeExport
+@ListWrappers
 class AnnotationsClientManager private constructor(
     databaseDriverFactory: DatabaseDriverFactory? = null,
     private val builder: Builder,
@@ -68,7 +69,7 @@ class AnnotationsClientManager private constructor(
         SettingsManager(settings)
     }
 
-    private val repo: AnnotationsClientRepository by lazy {
+    internal val repo: AnnotationsClientRepository by lazy {
         val httpClient = AnnotationsApiServiceImpl.getHttpClient(
             config?.builder?.logHttpRequests ?: false,
             config?.builder?.interceptors,
@@ -158,21 +159,9 @@ class AnnotationsClientManager private constructor(
         }
     }
 
-    fun getRocketLaunchFlow(param: String = ""): Task<CommonFlow<List<RocketLaunch>>> {
+    fun getRocketLaunchesFlow(param: String = ""): Task<CommonFlow<List<RocketLaunch>>> {
         return Task.execute {
             repo.getRocketLaunchesFlow()
-        }
-    }
-
-    fun getRocketLaunchArrayFlow(param: String = ""): Task<CommonFlow<RocketLaunchArray>> {
-        return Task.execute {
-            repo.getRocketLaunchesFlow().map { RocketLaunchArray(it.toTypedArray()) }.asCommonFlow()
-        }
-    }
-
-    fun getRocketLaunchListFlow(param: String = ""): Task<CommonFlow<RocketLaunchList>> {
-        return Task.execute {
-            repo.getRocketLaunchesFlow().map { RocketLaunchList(it) }.asCommonFlow()
         }
     }
 
