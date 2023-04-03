@@ -36,8 +36,9 @@ class ModelVisitor(
     private val dependencies: Dependencies,
     val packageName: String? = null
 ) : KSVisitorVoid() {
-
-    var shouldGenerateUtilFile = true
+    companion object {
+        var shouldGenerateUtilFile = true
+    }
 
     override fun visitClassDeclaration(
         classDeclaration: KSClassDeclaration, data: Unit
@@ -49,9 +50,9 @@ class ModelVisitor(
 
         val outputStream: OutputStream = codeGenerator.createNewFile(
             dependencies = Dependencies(false),
-            "kotlin.$packageString",
+            packageString,
             fileName = className,
-            extensionName = "g.kt"
+            extensionName = "kt"
         )
         val filePackageString = packageString.let {
             if (it.isBlank()) "" else "package $it"
@@ -114,8 +115,24 @@ class ModelVisitor(
             """.trimMargin().toByteArray()
         )
 
-        if(shouldGenerateUtilFile){
-            generateUtilFile(codeGenerator,packageString,filePackageString)
+
+        if (shouldGenerateUtilFile) {
+            val isInModels = codeGenerator.generatedFile.any {
+                it.path.contains(
+                    "models/build/generated/ksp/metadata/commonMain/kotlin/${
+                        packageString.replace(
+                            ".",
+                            "/"
+                        )
+                    }"
+                )
+            }
+            if (!isInModels) {
+                shouldGenerateUtilFile = false
+                return
+            }
+            generateUtilFile(codeGenerator, packageString, filePackageString)
+            shouldGenerateUtilFile = false
         }
     }
 
@@ -128,10 +145,11 @@ private fun generateUtilFile(
 ) {
     val outputStream: OutputStream = codeGenerator.createNewFile(
         dependencies = Dependencies(false),
-        "kotlin.$packageString",
+        packageString,
         fileName = "Utils",
-        extensionName = "g.kt"
+        extensionName = "kt"
     )
+
     outputStream.write(
         """
             |$filePackageString

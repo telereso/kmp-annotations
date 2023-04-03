@@ -7,6 +7,8 @@ pluginManagement {
         google()
         gradlePluginPortal()
         mavenCentral()
+        maven { url = uri("https://repo.spring.io/milestone") }
+        maven { url = uri("https://repo.spring.io/snapshot") }
     }
 }
 
@@ -18,7 +20,15 @@ dependencyResolutionManagement {
 }
 rootProject.name = "kmp-annotations"
 includeBuild("convention-plugins")
-include("gradle-plugin")
+includeBuild("gradle-plugin")
 include(":annotations")
 include(":processor")
 include(":app")
+
+include(":lib")
+project(":lib").name = "annotations-client"
+include(":models")
+project(":models").name = "annotations-models"
+
+include(":androidApp")
+include(":jvmApi")

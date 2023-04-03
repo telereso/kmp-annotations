@@ -29,6 +29,7 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.*
+import io.telereso.kmp.annotations.SkipReactNativeExport
 import io.telereso.kmp.processor.*
 import java.io.OutputStream
 import java.util.*
@@ -37,6 +38,7 @@ import kotlin.collections.HashSet
 
 
 const val CLASS_COMMON_FLOW = "CommonFlow"
+const val CLASS_EMITTER_SUBSCRIPTION = "EmitterSubscription"
 
 class ReactNativeMangerVisitor(
     private val logger: KSPLogger,
@@ -45,8 +47,9 @@ class ReactNativeMangerVisitor(
     private val scope: String? = null,
     private val packageName: String? = null
 ) : KSVisitorVoid() {
-    private val skipFunctions = listOf("equals", "hashCode", "toString")
-    private val skipClasses = listOf("CommonFlow","String","Boolean","Int" , "Unit" )
+
+    private val skipClasses =
+        listOf(CLASS_EMITTER_SUBSCRIPTION, "void", "CommonFlow", "String", "Boolean", "Int", "Unit")
 
     override fun visitClassDeclaration(
         classDeclaration: KSClassDeclaration, data: Unit
@@ -67,26 +70,40 @@ class ReactNativeMangerVisitor(
 
 
         val className = originalClassName.removeSuffix("Manager")
+        if (className.isEmpty()) return
+
         val memberClassName = className.replaceFirst(className[0], className[0].lowercaseChar())
         val snakeClassName = className.camelToSnakeCase()
         val outputStream: OutputStream = codeGenerator.createNewFile(
             dependencies = Dependencies(false),
-            "${packageString}.rn",
+            "rn-kotlin.${packageString}.rn",
             fileName = "${className}Module",
-            extensionName = "kt"
+            extensionName = "g.kt"
         )
 
         val enums = hashSetOf<String>()
+        val functionsImports = mutableListOf<String>()
 
         val modelImports = classDeclaration.getAllFunctions().mapNotNull {
-            if (it.getVisibility() == Visibility.PUBLIC && !skipFunctions.contains(it.simpleName.asString())) {
+            if (it.getVisibility() == Visibility.PUBLIC &&
+                !it.skipReactNative() &&
+                !skipFunctions.contains(it.simpleName.asString())
+            ) {
+                it.getCommonFlowListClass()?.let { _ ->
+                    functionsImports.add(it.getListFlowName())
+                    functionsImports.add(it.getArrayFlowName())
+                }
+
                 it.getMethodBodyAndroid(enums).second
             } else null
         }
 
 
         val methods = classDeclaration.getAllFunctions().mapNotNull {
-            if (it.getVisibility() == Visibility.PUBLIC && !skipFunctions.contains(it.simpleName.asString())) {
+            if (it.getVisibility() == Visibility.PUBLIC &&
+                !it.skipReactNative() &&
+                !skipFunctions.contains(it.simpleName.asString())
+            ) {
                 """  
                 |  @ReactMethod
                 |  fun ${it.simpleName.asString()}(${
@@ -103,14 +120,21 @@ class ReactNativeMangerVisitor(
         val modelImportString =
             modelImports.joinToString("\n") { "import ${modelsPackageString}.models.$it" }
 
+        val importExtensionFunctions = functionsImports.joinToString("\n") {
+            "import $packageString.$it"
+        }
+
         outputStream.write(
             """
             |package $packageString.rn
             |
             |import $packageString.$originalClassName
             |import $modelsPackageString.*
+            |$importExtensionFunctions
             |import com.facebook.react.bridge.*
+            |import com.facebook.react.modules.core.DeviceEventManagerModule
             |import kotlin.js.ExperimentalJsExport
+            |import io.telereso.kmp.core.Task
             |
             |
             |@OptIn(ExperimentalJsExport::class)
@@ -137,6 +161,8 @@ class ReactNativeMangerVisitor(
         val packageString = packageName ?: classDeclaration.packageName.asString()
         val originalClassName = classDeclaration.simpleName.getShortName()
         val className = originalClassName.removeSuffix("Manager")
+        if (className.isEmpty()) return
+
         val memberClassName = className.replaceFirst(className[0], className[0].lowercaseChar())
         val snakeClassName = className.camelToSnakeCase()
 
@@ -145,15 +171,21 @@ class ReactNativeMangerVisitor(
         val outputStream: OutputStream = codeGenerator.createNewFile(
             dependencies = Dependencies(false),
             "ios",
-            fileName = "$className",
+            fileName = className,
             extensionName = "swift"
         )
 
         val enums = HashMap<String, List<String>>()
 
+        val flowEvents = mutableListOf<String>()
+
         val modelImports = classDeclaration.getAllFunctions().mapNotNull {
-            if (it.getVisibility() == Visibility.PUBLIC && !skipFunctions.contains(it.simpleName.asString())) {
-                it.getMethodBodyIos(className,enums).second
+            if (it.getVisibility() == Visibility.PUBLIC
+                && !it.skipReactNative()
+                && !skipFunctions.contains(it.simpleName.asString())) {
+                val res = it.getMethodBodyIos(className, enums)
+                flowEvents.addAll(res.third)
+                res.second
             } else null
         }
 
@@ -185,7 +217,7 @@ class ReactNativeMangerVisitor(
             |}
             |
             |@objc($className)
-            |class $className: NSObject {
+            |class $className: RCTEventEmitter {
             |    private class func getManger() -> ${className}Manager? {
             |        do {
             |            return try ${className}Manager.Companion().getInstance()
@@ -194,8 +226,28 @@ class ReactNativeMangerVisitor(
             |        }
             |    }
             |    // uncomment for testing, handle builder constructor if changed 
-            |    //var a = ${className}Manager.Builder(databaseDriverFactory: DatabaseDriverFactory()).build()
+            |    // var a = ${className}Manager.Builder(databaseDriverFactory: DatabaseDriverFactory()).build()
             |    var manager = getManger()
+            |
+            |    private var hasListeners = false;
+            |
+            |    override func supportedEvents() -> [String]! {
+            |        return [${flowEvents.joinToString(",") { "\"$it\"" }}]
+            |    }
+            |
+            |    override func startObserving() {
+            |        hasListeners = true
+            |    }
+            |
+            |    override func stopObserving() {
+            |        hasListeners = false
+            |    }
+            |
+            |    override func sendEvent(withName name: String!, body: Any!) {
+            |        if (hasListeners) {
+            |            super.sendEvent(withName: name, body: body)
+            |        }
+            |    }
             |
             |${methods.joinToString("\n\n")}
             |
@@ -231,7 +283,9 @@ class ReactNativeMangerVisitor(
         }
 
         val methods = classDeclaration.getAllFunctions().mapNotNull {
-            if (it.getVisibility() == Visibility.PUBLIC && !skipFunctions.contains(it.simpleName.asString())) {
+            if (it.getVisibility() == Visibility.PUBLIC
+                && !it.skipReactNative()
+                && !skipFunctions.contains(it.simpleName.asString())) {
                 """
                 |RCT_EXTERN_METHOD(${it.getTypedHeaderParametersIosOC()})
                 """.trimMargin()
@@ -245,8 +299,11 @@ class ReactNativeMangerVisitor(
         outputStream.write(
             """
             |#import <React/RCTBridgeModule.h>
+            |#import <React/RCTEventEmitter.h>
             |
-            |@interface RCT_EXTERN_MODULE($className, NSObject)
+            |@interface RCT_EXTERN_MODULE($className, RCTEventEmitter)
+            |
+            |RCT_EXTERN_METHOD(supportedEvents)
             |
             |${methods.joinToString("\n\n")}
             |
@@ -265,6 +322,8 @@ class ReactNativeMangerVisitor(
         val packageString = packageName ?: classDeclaration.packageName.asString()
         val originalClassName = classDeclaration.simpleName.getShortName()
         val className = originalClassName.removeSuffix("Manager")
+        if (className.isEmpty()) return
+
         val projectName = className.removeSuffix("Client").lowercase()
         val modelPackage = packageString.removeSuffix(".client").plus(".models")
         val modelClassName = projectName.snakeToUpperCamelCase().plus("Models")
@@ -287,16 +346,29 @@ class ReactNativeMangerVisitor(
         val enums = hashMapOf<String, List<String>>()
 
         classDeclaration.getAllFunctions().forEach {
-            if (it.getVisibility() == Visibility.PUBLIC && !skipFunctions.contains(it.simpleName.asString())) {
+            if (it.getVisibility() == Visibility.PUBLIC
+                && !it.skipReactNative()
+                && !skipFunctions.contains(it.simpleName.asString())) {
                 val typedParams = it.getTypedParametersJs(enums).second
                 it.getMethodBodyJs(className, enums).let { trip ->
-                    trip.second?.let { klass ->
+                    trip.second.forEach { promisedKlass ->
+                        val klass = promisedKlass
+                            .removePrefix("Promise<")
+                            .removePrefix("typeof ")
+                            .removeSuffix(">")
                         typedParams.add(klass)
                         modelFromJsonImports.add(klass)
                     }
                     modelToJsonImports.addAll(trip.third)
                 }
                 modelImports.addAll(typedParams)
+
+                it.getCommonFlowListClass()?.let { c->
+                    val arrayClassName = "${c}Array"
+                    modelImports.add(arrayClassName)
+                    modelFromJsonImports.add(arrayClassName)
+                }
+
             }
         }
 
@@ -318,11 +390,12 @@ class ReactNativeMangerVisitor(
                 .distinct()
                 .joinToString("\n") {
                 """
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars    
                 // @ts-ignore
-                const ${it}FromJson = ${modelClassName}.${it}FromJson;
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const ${it}FromJson = ${modelClassName}.${it}FromJson;
+
                 // @ts-ignore
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const ${it}FromJsonArray = ${modelClassName}.${it}FromJsonArray;
                 """.trimIndent()
             }
@@ -335,20 +408,22 @@ class ReactNativeMangerVisitor(
             }
 
         val methods = classDeclaration.getAllFunctions().mapNotNull {
-            if (it.getVisibility() == Visibility.PUBLIC && !skipFunctions.contains(it.simpleName.asString())) {
+            if (it.getVisibility() == Visibility.PUBLIC
+                && !it.skipReactNative()
+                && !skipFunctions.contains(it.simpleName.asString())) {
                 val res = it.getMethodBodyJs(className, enums)
                 val typedParams = it.getTypedParametersJs(enums)
-                res.second?.let { klass: String ->
+                res.second.forEach { klass: String ->
                     modelImports.add(klass)
                 }
                 modelImports.addAll(typedParams.second)
 
+
                 """
-                |export function ${it.simpleName.asString()}(${typedParams.first}): Promise<${res.second.jsType()}> {
-                |  return new Promise<${res.second.jsType()}>((resolve, reject) => {
-                |${res.first}
-                |  });
+                |export function ${it.simpleName.asString()}(${typedParams.first}): ${res.second.first()} {
+                |  ${res.first}
                 |}
+                |
                 """.trimMargin()
             } else
                 null
@@ -356,7 +431,7 @@ class ReactNativeMangerVisitor(
 
         outputStream.write(
             """
-            |import { NativeModules, Platform } from 'react-native';
+            |import { NativeModules, Platform, NativeEventEmitter, $CLASS_EMITTER_SUBSCRIPTION } from 'react-native';
             |
             |const LINKING_ERROR =
             |  `The package 'react-native-${projectName}-client' doesn't seem to be linked. Make sure: \n\n` +
@@ -388,13 +463,17 @@ class ReactNativeMangerVisitor(
         )
     }
 
+    private fun KSFunctionDeclaration.skipReactNative(): Boolean {
+        return annotations.any { it.shortName.asString() == SkipReactNativeExport::class.simpleName }
+    }
+
 }
 
-const val PREFIX_TASK = "Task<"
-const val PREFIX_TASK_ARRAY = "Task<Array<"
-val REGEX_TASK = Regex("(?<=Task<)(.*?)(?=>)")
-val REGEX_TASK_ARRAY = Regex("(?<=Task<Array<)(.*?)(?=>)")
-val REGEX_COMMON_FLOW = Regex("(?<=$CLASS_COMMON_FLOW<)(.*?)(?=>)")
+private fun KSFunctionDeclaration.getParametersSignature(): String {
+    return "${parameters.size}${
+        parameters.joinToString("") { "${(it.name?.asString() ?: "n")[0]}${it.type.toString()[0]}".lowercase() }
+    }"
+}
 
 private fun KSFunctionDeclaration.getResultAndroid(enums: HashSet<String>): Pair<String, String?> {
 
@@ -409,8 +488,10 @@ private fun KSFunctionDeclaration.getResultAndroid(enums: HashSet<String>): Pair
             "${klass}.toJson(it)" to klass
         }
         typeString.startsWith(PREFIX_TASK) -> {
-            val klass = REGEX_TASK.find(typeString)?.value
+            var klass = REGEX_TASK.find(typeString)?.value
             val commonFlowClass = REGEX_COMMON_FLOW.find(typeString)?.value
+            val commonFlowListClass = REGEX_COMMON_FLOW_LIST.find(typeString)?.value
+            val commonFlowArrayClass = REGEX_COMMON_FLOW_ARRAY.find(typeString)?.value
 
             val nullabilityString = if (klass?.endsWith("?") == true) "?" else ""
 //            val nullabilityString = when (type.nullability) {
@@ -424,14 +505,28 @@ private fun KSFunctionDeclaration.getResultAndroid(enums: HashSet<String>): Pair
                 klass == "Unit" -> {
                     res = "\"\""
                 }
-                !commonFlowClass.isNullOrEmpty() -> {}
+                !commonFlowArrayClass.isNullOrEmpty() -> {
+                    klass = commonFlowArrayClass
+                    res = "${klass}.toJson(it)"
+                }
+                !commonFlowListClass.isNullOrEmpty() -> {
+                    klass = commonFlowListClass
+                    res = "${res}${nullabilityString}.toJson()"
+                }
+                !commonFlowClass.isNullOrEmpty() -> {
+                    klass = commonFlowClass
+                    res = "${res}${nullabilityString}.toJson()"
+                }
                 enums.contains(klass) -> {}
                 !klass.isPrimitiveKotlin() -> {
                     res = "${res}${nullabilityString}.toJson()"
                 }
             }
 
-            res to null
+            if (klass?.isPrimitiveKotlin() == true)
+                klass = null
+
+            res to klass
         }
         else -> {
             "it" to null
@@ -445,15 +540,48 @@ private fun KSFunctionDeclaration.getResultIos(): Pair<String, String?> {
     return when {
         type == null -> "res" to null
         type == "Unit" -> "\"\"" to null
+        type.startsWith(CLASS_COMMON_FLOW) -> {
+            val commonFlowClass = REGEX_COMMON_FLOW.find(type)?.value
+            if (commonFlowClass?.isPrimitiveKotlin() == true) {
+                "res" to returnType?.objectiveCType()
+            } else {
+                "${commonFlowClass}.toJson(it)" to commonFlowClass
+            }
+        }
         type.startsWith(PREFIX_TASK_ARRAY) -> {
             val klass = REGEX_TASK_ARRAY.find(type)?.value
             "${klass}.Companion().toJson(array: res)" to klass
         }
         type.startsWith(PREFIX_TASK) -> {
-            val klass = REGEX_TASK.find(type)?.value
+            var klass = REGEX_TASK.find(type)?.value
             val commonFlowClass = REGEX_COMMON_FLOW.find(type)?.value
+            val commonFlowListClass = REGEX_COMMON_FLOW_LIST.find(type)?.value
+            val commonFlowArrayClass = REGEX_COMMON_FLOW_ARRAY.find(type)?.value
+
+
+            klass = (commonFlowListClass ?: commonFlowArrayClass ?: commonFlowClass
+            ?: klass)?.removeSuffix("?")
+
             when {
-                commonFlowClass != null || klass == null || klass == "Unit"-> "\"\"" to null
+                !commonFlowListClass.isNullOrEmpty() -> {
+                    if (klass?.isPrimitiveKotlin() == true)
+                        "res" to null
+                    else
+                        "res.toJson()" to "${klass}Array"
+                }
+                !commonFlowArrayClass.isNullOrEmpty() -> {
+                    if (klass?.isPrimitiveKotlin() == true)
+                        "res" to null
+                    else
+                        "${klass}.Companion().toJson(array: res)" to "KotlinArray<$klass>"
+                }
+                !commonFlowClass.isNullOrEmpty() -> {
+                    if (klass?.isPrimitiveKotlin() == true)
+                        "res" to null
+                    else
+                        "res.toJson()" to klass
+                }
+                klass == null || klass == "Unit" -> "\"\"" to null
                 klass in listOf("String", "Long", "Int", "Boolean") -> "res" to null
                 else -> {
                     "res.toJson()" to null
@@ -470,7 +598,7 @@ private fun KSFunctionDeclaration.getResultJs(): Pair<String, String?> {
 
     val type = returnType?.resolve()?.toString()
     return when {
-        type == null || type ==  "Unit" -> "" to null
+        type == null || type == "Unit" -> "" to null
         type.startsWith("String") -> "data" to "String"
         type.startsWith("Boolean") -> "data" to "boolean"
         type.startsWith("Int") -> "data" to "number"
@@ -479,20 +607,33 @@ private fun KSFunctionDeclaration.getResultJs(): Pair<String, String?> {
             "${klass}FromJsonArray(${klass}.Companion, data)" to klass
         }
         type.startsWith(PREFIX_TASK) -> {
-            var klass = REGEX_TASK.find(type)?.value?.jsType()?.removePrefix("typeof ")
+            var klass = REGEX_TASK.find(type)?.value?.jsTypeClass()
             val commonFlowClass = REGEX_COMMON_FLOW.find(type)?.value
+            val commonFlowListClass = REGEX_COMMON_FLOW_LIST.find(type)?.value
+            val commonFlowArrayClass = REGEX_COMMON_FLOW_ARRAY.find(type)?.value
+
 
             if (commonFlowClass != null)
                 klass = commonFlowClass.removeSuffix("?")
 
-            when (klass) {
-                "Unit", "unit",  -> "" to null
-                "string" , "boolean" , "number" -> "data" to klass
+            if (commonFlowListClass != null)
+                klass = "${commonFlowListClass.removeSuffix("?")}Array"
+
+            when {
+                !commonFlowArrayClass.isNullOrEmpty() -> {
+                    klass = commonFlowArrayClass.removeSuffix("?")
+                    "${klass}FromJsonArray(${klass}.Companion, data)" to klass
+                }
                 else -> {
-                    "${klass}FromJson(${klass}.Companion, data)" to klass
+                    when (klass) {
+                        "Unit", "unit" -> "" to null
+                        "string", "boolean", "number" -> "data" to klass
+                        else -> {
+                            "${klass}FromJson(${klass}.Companion, data)" to klass
+                        }
+                    }
                 }
             }
-
         }
         else -> {
             "data" to null
@@ -502,8 +643,50 @@ private fun KSFunctionDeclaration.getResultJs(): Pair<String, String?> {
 
 private fun KSFunctionDeclaration.getMethodBodyAndroid(enums: HashSet<String>): Pair<String, String?> {
     val type = returnType?.resolve()?.toString()
+    val funName = simpleName.asString()
+    var funNameList: String? = null
+    val escapedName = "\${NAME}"
+
     return when {
         type == null -> "" to null
+        type.startsWith(CLASS_COMMON_FLOW) -> {
+            val res = getResultAndroid(enums)
+            """       
+            |   Task.execute {
+            |     val emitter =
+            |       reactApplicationContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+            |     manager.$funName(${getParametersAndroid(enums)}).collect {
+            |       emitter.emit("${escapedName}_${funName}_${getParametersSignature()}", ${res.first})
+            |     }
+            |     promise.resolve(true)
+            |   }.onFailure {
+            |     promise.reject(it)
+            |   }
+           """.trimMargin() to res.second
+        }
+        type.startsWith(PREFIX_TASK_COMMON_FLOW) -> {
+            val res = getResultAndroid(enums)
+            val commonFlowListClass = REGEX_COMMON_FLOW_LIST.find(type)?.value
+            if (commonFlowListClass != null) {
+                funNameList = funName.removeSuffix("Flow").plus("ArrayFlow")
+            }
+            """       
+            |   manager.${funNameList ?: funName}(${getParametersAndroid(enums)}).onSuccess { res -> 
+            |     val emitter =
+            |          reactApplicationContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+            |     Task.execute {
+            |       res.collect {
+            |           emitter.emit("${escapedName}_${funName}_${getParametersSignature()}", ${res.first})
+            |       }
+            |       promise.resolve(true)
+            |     }.onFailure {
+            |       promise.reject(it)
+            |     }
+            |   }.onFailure {
+            |     promise.reject(it)
+            |   }
+           """.trimMargin() to res.second
+        }
         type.startsWith(PREFIX_TASK) -> {
             val res = getResultAndroid(enums)
             """       
@@ -516,7 +699,11 @@ private fun KSFunctionDeclaration.getMethodBodyAndroid(enums: HashSet<String>): 
         }
         else -> {
             "       try {\n" +
-                    "          promise.resolve(manager.${simpleName.asString()}(${getParametersAndroid(enums)})) \n" +
+                    "          promise.resolve(manager.${simpleName.asString()}(${
+                        getParametersAndroid(
+                            enums
+                        )
+                    })) \n" +
                     "       } catch (e:Exception){\n" +
                     "          promise.reject(e)\n" +
                     "       }\n" to null
@@ -528,14 +715,77 @@ private fun KSFunctionDeclaration.getMethodBodyAndroid(enums: HashSet<String>): 
 private fun KSFunctionDeclaration.getMethodBodyIos(
     className: String,
     enums: HashMap<String, List<String>>
-): Pair<String, String?> {
+): Triple<String, String?, List<String>> {
     val type = returnType?.resolve()?.toString()
     val paramsRes = getParametersIos(enums)
+    val funName = simpleName.asString()
+    var funNameList: String? = null
+    val eventName = "${className}_${funName}_${getParametersSignature()}"
     return when {
-        type == null -> "" to null
+        type == null -> Triple("", null, emptyList())
+        type.startsWith(CLASS_COMMON_FLOW) -> {
+            val res = getResultIos()
+
+            Triple(
+                """
+            |if (manager == nil) {
+            |            reject("$funName error", "${className}Manager was not initialized", "${className}Manager was not initialized")
+            |        } else {
+            |            ${paramsRes.second}
+            |            manager!.${funName}(${paramsRes.first}).watch { (result: ${res.second}?, error: ClientException?) in
+            |                        if(error != nil){
+            |                           return reject("${simpleName.asString()} error", "${simpleName.asString()} error", error?.message ?? "empty message")
+            |                        }
+            |                        guard let res = result else {
+            |                            return
+            |                        }
+            |                        self.sendEvent(withName: "$eventName", body: ${res.first})
+            |                    }
+            |           resolve(true)
+            |        }
+            """.trimMargin(), res.second, listOf(eventName)
+            )
+        }
+        type.startsWith(PREFIX_TASK_COMMON_FLOW) -> {
+            val res = getResultIos()
+            val commonFlowListClass = REGEX_COMMON_FLOW_LIST.find(type)?.value
+            if (commonFlowListClass != null) {
+                funNameList = funName.removeSuffix("Flow").plus("ArrayFlow")
+            }
+            Triple(
+                """
+            |if (manager == nil) {
+            |            reject("$funName error", "${className}Manager was not initialized", "${className}Manager was not initialized")
+            |        } else {
+            |            ${paramsRes.second}
+            |            
+            |            manager!.${funNameList ?: funName}(${paramsRes.first}).onSuccess { streamResult in
+            |                        guard let stream = streamResult else {
+            |                            return
+            |                        }
+            |                        stream.watch { (result: ${res.second}?, error: ClientException?) in
+            |                            if(error != nil){
+            |                                return
+            |                            }
+            |                            guard let res = result else {
+            |                                return
+            |                            }
+            |                            self.sendEvent(withName: "$eventName", body: ${res.first})
+            |                        }
+            |                        resolve(true)
+            |                    }
+            |                    .onFailure { KotlinThrowable in
+            |                        reject("${simpleName.asString()} error", "${simpleName.asString()} error", KotlinThrowable.asError())
+            |                    }
+            |        }
+            """.trimMargin(), res.second, listOf(eventName)
+            )
+        }
+
         type.startsWith(PREFIX_TASK) -> {
             val res = getResultIos()
-            """
+            Triple(
+                """
             |if (manager == nil) {
             |            reject("${simpleName.asString()} error", "${className}Manager was not initialized", "${className}Manager was not initialized")
             |        } else {
@@ -551,50 +801,130 @@ private fun KSFunctionDeclaration.getMethodBodyIos(
             |                        reject("${simpleName.asString()} error", "${simpleName.asString()} error", KotlinThrowable.asError())
             |                    }
             |        }
-            """.trimMargin() to res.second
+            """.trimMargin(), res.second, emptyList()
+            )
         }
         else -> {
-            """
+            Triple(
+                """
             |if (manager == nil) {
             |            reject("${simpleName.asString()} error", "${className}Manager was not initialized", "${className}Manager was not initialized")
             |        } else {
             |            ${paramsRes.second}
             |            resolve(manager!.${simpleName.asString()}(${paramsRes.first}))
             |        }
-            """.trimMargin() to null
+            """.trimMargin(), null, emptyList()
+            )
         }
     }
 
 }
 
-private fun KSFunctionDeclaration.getMethodBodyJs(className: String, enums: HashMap<String, List<String>>): Triple<String, String?, Set<String>> {
+private fun KSFunctionDeclaration.getMethodBodyJs(
+    className: String,
+    enums: HashMap<String, List<String>>
+): Triple<String, List<String>, Set<String>> {
     val type = returnType?.resolve()?.toString()
+    val res = getResultJs()
+    val params = getParametersJs(enums)
+    val funName = simpleName.asString()
+
     return when {
-        type == null -> Triple("void", null, emptySet())
+        type == null -> Triple("void", emptyList(), emptySet())
 //        type.startsWith(PREFIX_TASK) -> {
-//        type.startsWith(CLASS_COMMON_FLOW) -> Triple("void", null, emptySet())
+        type.startsWith(PREFIX_TASK_COMMON_FLOW) -> {
+            val commonFlowClass = REGEX_COMMON_FLOW.find(type)?.value
+            val commonFlowListClass = REGEX_COMMON_FLOW_LIST.find(type)?.value
+            val commonFlowArrayClass = REGEX_COMMON_FLOW_ARRAY.find(type)?.value
+
+            when {
+                !commonFlowListClass.isNullOrEmpty() || !commonFlowArrayClass.isNullOrEmpty() -> {
+                    Triple(
+                        """
+                | const eventEmitter = new NativeEventEmitter($className);
+                |  let eventListener = eventEmitter.addListener(
+                |    '${className}_${funName}_${getParametersSignature()}',
+                |    (data: string) => {
+                |      stream(${res.first});
+                |    }
+                |  );
+                |  $className.${funName}(${params.first}).catch((e: any) => {
+                |    error(e);
+                |  }); 
+                |  return eventListener;
+                |
+            """.trimMargin(),
+                        listOf(CLASS_EMITTER_SUBSCRIPTION, commonFlowListClass.jsTypeClass()),
+                        params.second
+                    )
+                }
+                else -> {
+                    Triple(
+                        """
+                | const eventEmitter = new NativeEventEmitter($className);
+                |  let eventListener = eventEmitter.addListener(
+                |    '${className}_${funName}_${getParametersSignature()}',
+                |    (data: string) => {
+                |      stream(${res.first});
+                |    }
+                |  );
+                |  $className.$funName(${params.first}).catch((e: any) => {
+                |    error(e);
+                |  }); 
+                |  return eventListener;
+                |
+            """.trimMargin(),
+                        listOf(CLASS_EMITTER_SUBSCRIPTION,commonFlowClass.jsTypeClass()),
+                        params.second
+                    )
+                }
+            }
+
+        }
+        type.startsWith(CLASS_COMMON_FLOW) -> {
+            val commonFlowClass = REGEX_COMMON_FLOW.find(type)?.value
+            Triple(
+                """
+                | const eventEmitter = new NativeEventEmitter($className);
+                |  let eventListener = eventEmitter.addListener(
+                |    '${className}_${funName}_${getParametersSignature()}',
+                |    (data: string) => {
+                |      stream(${res.first});
+                |    }
+                |  );
+                |  $className.$funName(${params.first}).catch((e: any) => {
+                |    error(e);
+                |  }); 
+                |  return eventListener;
+                |
+            """.trimMargin(),
+                listOf(CLASS_EMITTER_SUBSCRIPTION), params.second
+            )
+        }
         else -> {
-            val res = getResultJs()
-            val dataString = when (type){
+            val dataString = when (type) {
                 "Unit", "Task<Unit>" -> ""
                 "Boolean", "Task<Boolean>" -> "data: boolean"
                 "Int", "Task<Int>" -> "data: number"
                 else -> "data: string"
             }
             val resolveString = if (type == "Unit") "" else res.first
+            val returnType = "Promise<${res.second.jsType()}>"
 
-
-            val params = getParametersJs(enums)
             Triple(
                 """
-            |    $className.${simpleName.asString()}(${params.first})
+            |return new $returnType((resolve, reject) => {
+            |    $className.$funName(${params.first})
             |      .then(($dataString) => {
             |        resolve(${resolveString});
             |      })
             |      .catch((e: any) => {
             |        reject(e);
             |      });
-            """.trimMargin(), res.second, params.second
+            |})      
+            """.trimMargin(),
+                listOf(returnType),
+                params.second
             )
         }
     }
@@ -608,11 +938,12 @@ private fun KSTypeReference.getDefault(nullability: Nullability): String {
         "$this" == "Int" -> "0"
         "$this" == "Long" -> "0"
         "$this" == "Float" -> "0"
-        else -> ""
+        "$this" == "String" -> "\"\""
+        else -> "\"\""
     }
 }
 
-private fun KSFunctionDeclaration.getTypedParametersAndroid(enums: HashSet<String>): String {
+fun KSFunctionDeclaration.getTypedParametersAndroid(enums: HashSet<String>): String {
     return parameters.mapNotNull { p ->
         val t = p.type.resolve()
         val nullabilityString = when (t.nullability) {
@@ -644,12 +975,13 @@ private fun KSFunctionDeclaration.getTypedParametersIos(enums: HashMap<String,Li
 
 private fun KSFunctionDeclaration.getTypedParametersJs(enums: HashMap<String, List<String>>): Pair<String, HashSet<String>> {
     val paramClasses = hashSetOf<String>()
+
     return parameters.mapNotNull { p ->
         p.name?.let { name ->
             val type = p.type.jsType(p.hasDefault)
             val t = p.type.resolve()
             val paramClass = t.declaration.closestClassDeclaration()
-            if (paramClass?.classKind == ClassKind.ENUM_CLASS){
+            if (paramClass?.classKind == ClassKind.ENUM_CLASS) {
                 enums[paramClass.simpleName.asString()] =
                     paramClass.getEnumEntries().map { it.simpleName.asString() }.toList()
             }
@@ -657,6 +989,26 @@ private fun KSFunctionDeclaration.getTypedParametersJs(enums: HashMap<String, Li
                 paramClasses.add(type.removePrefix("typeof "))
             }
             "${name.asString()}: $type"
+        }
+    }.toMutableList().apply {
+        val rt = returnType?.resolve()?.toString() ?: return@apply
+        if (rt.startsWith(CLASS_COMMON_FLOW) || rt.startsWith(PREFIX_TASK_COMMON_FLOW)) {
+            val commonFlowClass = REGEX_COMMON_FLOW.find(rt)?.value
+            val commonFlowListClass = REGEX_COMMON_FLOW_LIST.find(rt)?.value ?: REGEX_COMMON_FLOW_ARRAY.find(rt)?.value
+            val commonFlowArrayClass = REGEX_COMMON_FLOW_ARRAY.find(rt)?.value
+
+            val klass = commonFlowListClass ?: commonFlowClass
+            klass?.let { k -> paramClasses.add(k) }
+            var jsClassType = klass.jsType()
+            if (commonFlowListClass != null) {
+                jsClassType = "${jsClassType}Array"
+            }
+            if (commonFlowArrayClass != null) {
+                jsClassType = "Array<$jsClassType>"
+            }
+
+            add(" stream: (data: $jsClassType) => void")
+            add(" error: (err: any) => void")
         }
     }.joinToString(",") to paramClasses
 }
@@ -705,7 +1057,7 @@ private fun KSFunctionDeclaration.getTypedHeaderParametersIosOC(): String {
 
 }
 
-private fun KSFunctionDeclaration.getParametersAndroid(enums: HashSet<String>): String {
+fun KSFunctionDeclaration.getParametersAndroid(enums: HashSet<String>): String {
     return parameters.mapNotNull { p ->
         p.name?.let { name ->
             val type = p.type.resolve()

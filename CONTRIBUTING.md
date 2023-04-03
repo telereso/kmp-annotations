@@ -17,3 +17,12 @@ Not provided yet (working on it), inject this project locally into another local
 
 # Project Secrets
 Handled by the pipeline , but project can run locally without any secrets 
+
+# Debug 
+Run the following command 
+
+```shell
+./gradlew :annotations-client:kspCommonMainKotlinMetadata --no-daemon -Dorg.gradle.debug=true -Pkotlin.compiler.execution.strategy=in-process
+```
+
+Then click debug `ksp`

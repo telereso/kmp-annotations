@@ -37,6 +37,7 @@ package com.yourcompany.fragmentfactory.data.model
 import android.os.Parcelable
 import io.telereso.kmp.annotations.Builder
 import io.telereso.kmp.annotations.FlutterExport
+import io.telereso.kmp.annotations.SkipJsonConverters
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 
@@ -45,6 +46,7 @@ import kotlinx.serialization.Serializable
 @Parcelize
 @Builder
 @Serializable
+@SkipJsonConverters
 data class Pokemon(
     val id: Int,
     var name: String,

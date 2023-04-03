@@ -29,11 +29,14 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.validate
 import io.telereso.kmp.annotations.Builder
 import io.telereso.kmp.annotations.FlutterExport
+import io.telereso.kmp.annotations.ListWrappers
 import io.telereso.kmp.annotations.ReactNativeExport
 import io.telereso.kmp.processor.builder.BuilderSymbolValidator
 import io.telereso.kmp.processor.builder.BuilderVisitor
 import io.telereso.kmp.processor.flutter.FlutterModelSymbolValidator
 import io.telereso.kmp.processor.flutter.FlutterModelVisitor
+import io.telereso.kmp.processor.lists.ListWrapperVisitor
+import io.telereso.kmp.processor.lists.ListWrappersSymbolValidator
 import io.telereso.kmp.processor.model.ModelSymbolValidator
 import io.telereso.kmp.processor.model.ModelVisitor
 import io.telereso.kmp.processor.reactnative.ReactNativeMangerVisitor
@@ -61,13 +64,16 @@ class KMPModelProcessor(
     private val modelValidator = ModelSymbolValidator(logger)
     private val reactNativeValidator = ReactNativeSymbolValidator(logger)
     private val builderValidator = BuilderSymbolValidator(logger)
+    private val listWrapperValidator = ListWrappersSymbolValidator(logger)
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         logger.info("KMPModelProcessor was invoked.")
+
         return processModel(resolver, packageName) +
                 processFlutter(resolver, packageName) +
                 processReactNative(resolver, scope, packageName) +
-                processBuilder(resolver, packageName)
+                processBuilder(resolver, packageName) +
+                processListWrappers(resolver, packageName)
     }
 
     private fun processModel(resolver: Resolver, packageName: String?): List<KSAnnotated> {
@@ -82,16 +88,11 @@ class KMPModelProcessor(
             }.toList()     // 2
             val dependencies = Dependencies(false, *resolver.getAllFiles().toList().toTypedArray())
             val visitor = ModelVisitor(codeGenerator, dependencies, packageName)
-            var isUtilFileGenerated = false
 
             validatedSymbols.filter {
                 modelValidator.isValid(it)
             }.forEach {
                 it.accept(visitor, Unit)
-                if (!isUtilFileGenerated) {
-                    isUtilFileGenerated = true
-                    visitor.shouldGenerateUtilFile = false
-                }
             }
             unresolvedSymbols = resolved - validatedSymbols.toSet()     //4
         }
@@ -160,6 +161,30 @@ class KMPModelProcessor(
 
             validatedSymbols.filter {
                 builderValidator.isValid(it)
+            }.forEach {
+                it.accept(visitor, Unit)
+            }
+            unresolvedSymbols = resolved - validatedSymbols.toSet()     //4
+        }
+        return unresolvedSymbols
+    }
+
+    private fun processListWrappers(
+        resolver: Resolver,
+        packageName: String?
+    ): List<KSAnnotated> {
+        var unresolvedSymbols: List<KSAnnotated> = emptyList()
+        val annotationName = ListWrappers::class.qualifiedName
+
+        if (annotationName != null) {
+            val resolved = resolver.getSymbolsWithAnnotation(annotationName).toList()     // 1
+            val validatedSymbols = resolved.filter { it.validate() }.toList()     // 2
+            val dependencies = Dependencies(false, *resolver.getAllFiles().toList().toTypedArray())
+            val visitor =
+                ListWrapperVisitor(codeGenerator, dependencies, packageName)
+
+            validatedSymbols.filter {
+                listWrapperValidator.isValid(it)
             }.forEach {
                 it.accept(visitor, Unit)
             }

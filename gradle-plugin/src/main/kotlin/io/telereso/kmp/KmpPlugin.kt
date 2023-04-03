@@ -45,11 +45,16 @@ class KmpPlugin : Plugin<Project> {
             scope
         }
 
-        val annotationsVersion = "0.0.15"
-        dependencies.add("commonMainImplementation", "io.telereso.kmp:annotations:$annotationsVersion")
-        dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:$annotationsVersion")
-//        dependencies.add("commonMainImplementation", project(":annotations"))
-//        dependencies.add("kspCommonMainMetadata", project(":processor"))
+        if (findProperty("teleresoKmpDevelopmentMode")?.toString()?.toBoolean() == true
+            && findProperty("publishGradlePlugin")?.toString()?.toBoolean() != true
+        ) {
+            dependencies.add("commonMainImplementation", project(":annotations"))
+            dependencies.add("kspCommonMainMetadata", project(":processor"))
+        } else {
+            val annotationsVersion = "0.0.16"
+            dependencies.add("commonMainImplementation", "io.telereso.kmp:annotations:$annotationsVersion")
+            dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:$annotationsVersion")
+        }
 
         val teleresoKmp = teleresoKmp()
 
@@ -134,13 +139,13 @@ class KmpPlugin : Plugin<Project> {
             val cleanAndroidGeneratedFiles = "cleanAndroidGeneratedFiles"
             tasks.create<Delete>(cleanAndroidGeneratedFiles) {
                 group = "Clean"
-                delete(buildDir.resolve("generated/ksp/metadata/commonMain/kotlin"))
+                delete(buildDir.resolve("generated/ksp/metadata/commonMain/rn-kotlin"))
             }
 
             tasks.create<Copy>(copyGeneratedFilesAndroidTask) {
                 log("Copying ksp generated reactNative android files")
 
-                from("${buildDir.path}/generated/ksp/metadata/commonMain/kotlin/")
+                from("${buildDir.path}/generated/ksp/metadata/commonMain/resources/rn-kotlin/")
                 into(
                     "${baseDir}/react-native-${
                         projectPackageName.replace(
@@ -187,8 +192,8 @@ class KmpPlugin : Plugin<Project> {
                 // Android tasks
                 tasks.getByName(copyGeneratedFilesAndroidTask)
                     .dependsOn("kspCommonMainKotlinMetadata")
-                tasks.getByName(copyGeneratedFilesAndroidTask)
-                    .finalizedBy(cleanAndroidGeneratedFiles)
+//                tasks.getByName(copyGeneratedFilesAndroidTask)
+//                    .finalizedBy(cleanAndroidGeneratedFiles)
 
                 // iOS tasks
                 tasks.getByName(copyGeneratedFilesIosTask)

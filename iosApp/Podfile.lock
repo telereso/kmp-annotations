@@ -1,0 +1,23 @@
+PODS:
+  - AnnotationsClient (0.0.1-place-holder)
+  - netfox (1.21.0)
+
+DEPENDENCIES:
+  - AnnotationsClient (from `../lib`)
+  - netfox
+
+SPEC REPOS:
+  trunk:
+    - netfox
+
+EXTERNAL SOURCES:
+  AnnotationsClient:
+    :path: "../lib"
+
+SPEC CHECKSUMS:
+  AnnotationsClient: 3709bb7d7249ab4879d4641e2cd5866396015801
+  netfox: 9d5cc727fe7576c4c7688a2504618a156b7d44b7
+
+PODFILE CHECKSUM: 00cebef8b677ff608b71f94959b7c746d92f0fa5
+
+COCOAPODS: 1.11.3
