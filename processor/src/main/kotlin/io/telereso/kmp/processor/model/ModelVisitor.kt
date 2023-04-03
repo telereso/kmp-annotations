@@ -38,6 +38,7 @@ class ModelVisitor(
 ) : KSVisitorVoid() {
     companion object {
         var shouldGenerateUtilFile = true
+        var convertersClassName = ""
     }
 
     override fun visitClassDeclaration(
@@ -48,10 +49,14 @@ class ModelVisitor(
         val memberClassName = className.replaceFirst(className[0], className[0].lowercaseChar())
         val snakeClassName = className.camelToSnakeCase()
 
+        if(shouldGenerateUtilFile){
+            convertersClassName = classDeclaration.simpleName.asString()
+        }
+
         val outputStream: OutputStream = codeGenerator.createNewFile(
             dependencies = Dependencies(false),
             packageString,
-            fileName = className,
+            fileName = "${className}Converters",
             extensionName = "kt"
         )
         val filePackageString = packageString.let {
@@ -84,31 +89,31 @@ class ModelVisitor(
             |${commentJsExport}@JsExport()
             |${commentJsExport}@JsName("${className}ToJson")
             |${internalString}fun $className.toJson(): String {
-            |   return jsonSerializer.encodeToString($className.serializer(), this)
+            |   return ${convertersClassName}JsonSerializer.encodeToString($className.serializer(), this)
             |}
             |
             |${commentJsExport}@JsExport()
             |${commentJsExport}@JsName("${className}ToJsonPretty")
             |${internalString}fun $className.toJsonPretty(): String {
-            |   return jsonPrettySerializer.encodeToString($className.serializer(), this)
+            |   return ${convertersClassName}JsonPrettySerializer.encodeToString($className.serializer(), this)
             |}
             |
             |${commentJsExport}@JsExport
             |${commentJsExport}@JsName("${className}FromJson")
             |${internalString}fun $className.Companion.fromJson(json:String): $className{
-            |   return jsonSerializer.decodeFromString(json)
+            |   return ${convertersClassName}JsonSerializer.decodeFromString(json)
             |}
             |
             |${commentJsExport}@JsExport
             |${commentJsExport}@JsName("${className}ToJsonArray")
             |${internalString}fun $className.Companion.toJson(array: Array<$className>): String {
-            |   return jsonSerializer.encodeToString(ListSerializer($className.serializer()), array.toList())
+            |   return ${convertersClassName}JsonSerializer.encodeToString(ListSerializer($className.serializer()), array.toList())
             |}
             |
             |${commentJsExport}@JsExport
             |${commentJsExport}@JsName("${className}FromJsonArray")
             |${internalString}fun $className.Companion.fromJsonArray(json:String): Array<$className> {
-            |   return jsonSerializer.decodeFromString(ListSerializer($className.serializer()), json).toTypedArray()
+            |   return ${convertersClassName}JsonSerializer.decodeFromString(ListSerializer($className.serializer()), json).toTypedArray()
             |}
             |
             |
@@ -117,60 +122,48 @@ class ModelVisitor(
 
 
         if (shouldGenerateUtilFile) {
-            val isInModels = codeGenerator.generatedFile.any {
-                it.path.contains(
-                    "models/build/generated/ksp/metadata/commonMain/kotlin/${
-                        packageString.replace(
-                            ".",
-                            "/"
-                        )
-                    }"
-                )
-            }
-            if (!isInModels) {
-                shouldGenerateUtilFile = false
-                return
-            }
             generateUtilFile(codeGenerator, packageString, filePackageString)
             shouldGenerateUtilFile = false
         }
     }
 
-}
+    private fun generateUtilFile(
+        codeGenerator: CodeGenerator,
+        packageString: String,
+        filePackageString: String
+    ) {
+        val outputStream: OutputStream = codeGenerator.createNewFile(
+            dependencies = Dependencies(false),
+            packageString,
+            fileName = "Utils",
+            extensionName = "kt"
+        )
 
-private fun generateUtilFile(
-    codeGenerator: CodeGenerator,
-    packageString: String,
-    filePackageString: String
-) {
-    val outputStream: OutputStream = codeGenerator.createNewFile(
-        dependencies = Dependencies(false),
-        packageString,
-        fileName = "Utils",
-        extensionName = "kt"
-    )
 
-    outputStream.write(
-        """
+        outputStream.write(
+            """
             |$filePackageString
             |
             |import kotlinx.serialization.json.Json
             |
-            |val jsonSerializer = Json {
+            |val ${convertersClassName}JsonSerializer = Json {
             |        prettyPrint = false
             |        isLenient = true
             |        ignoreUnknownKeys = true
             |}
             |
-            |val jsonPrettySerializer = Json {
+            |val ${convertersClassName}JsonPrettySerializer = Json {
             |        prettyPrint = true
             |        isLenient = true
             |        ignoreUnknownKeys = true
             |}
             |
             """.trimMargin().toByteArray()
-    )
+        )
+    }
 }
+
+
 
 private fun KSPropertyDeclaration.getJsonKey(): String {
     return annotations.find { it.toString() == "@SerialName" }

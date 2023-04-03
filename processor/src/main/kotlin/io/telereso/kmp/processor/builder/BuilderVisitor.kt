@@ -55,9 +55,9 @@ class BuilderVisitor(
         runCatching {
         val outputStream: OutputStream = codeGenerator.createNewFile(
             dependencies = Dependencies(false),
-            "kotlin.$packageString",
+            packageString,
             fileName = "${className}Builder",
-            extensionName = "g.kt"
+            extensionName = "kt"
         )
         val filePackageString = packageString.let {
             if (it.isBlank()) "" else "package $it"

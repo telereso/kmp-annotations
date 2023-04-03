@@ -51,7 +51,7 @@ class KmpPlugin : Plugin<Project> {
             dependencies.add("commonMainImplementation", project(":annotations"))
             dependencies.add("kspCommonMainMetadata", project(":processor"))
         } else {
-            val annotationsVersion = "0.0.16"
+            val annotationsVersion = "0.0.17"
             dependencies.add("commonMainImplementation", "io.telereso.kmp:annotations:$annotationsVersion")
             dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:$annotationsVersion")
         }
