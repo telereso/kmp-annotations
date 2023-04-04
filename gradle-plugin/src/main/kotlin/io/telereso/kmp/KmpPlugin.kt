@@ -49,8 +49,11 @@ class KmpPlugin : Plugin<Project> {
         }
 
         val localProps = Properties().apply {
-            File("${rootProject.rootDir}/local.properties").inputStream().use { fis ->
-                load(fis)
+            File("${rootProject.rootDir}/local.properties").apply {
+                if (exists())
+                    inputStream().use { fis ->
+                        load(fis)
+                    }
             }
         }
 
