@@ -116,7 +116,7 @@ class BuilderVisitor(
             |import kotlin.jvm.JvmStatic
             |
             |$jsExportString
-            |${internalString}class ${builderClassName}(${buildNoneNullableParams.joinToString(", ") { "val _${it.name?.asString()}: ${it.type.resolve()}" }}) {
+            |${internalString}class ${builderClassName}(${buildNoneNullableParams.joinToString(", ") { "private val _${it.name?.asString()}: ${it.type.resolve()}" }}) {
             |${properties.joinToString("\n")}
             |
             |${setters.joinToString("")}

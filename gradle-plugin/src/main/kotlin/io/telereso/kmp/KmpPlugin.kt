@@ -33,7 +33,10 @@ import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.extra
+import java.io.File
+import java.util.*
 
+const val KEY_TELERESO_KMP_DEVELOPMENT_MODE = "teleresoKmpDevelopmentMode"
 class KmpPlugin : Plugin<Project> {
     override fun apply(project: Project): Unit = project.run {
 
@@ -45,13 +48,23 @@ class KmpPlugin : Plugin<Project> {
             scope
         }
 
-        if (findProperty("teleresoKmpDevelopmentMode")?.toString()?.toBoolean() == true
+        val localProps = Properties().apply {
+            File("${rootProject.rootDir}/local.properties").inputStream().use { fis ->
+                load(fis)
+            }
+        }
+
+        val localProp = localProps[KEY_TELERESO_KMP_DEVELOPMENT_MODE]?.toString()
+        val projectProp = findProperty(KEY_TELERESO_KMP_DEVELOPMENT_MODE)?.toString()
+
+        if ((localProp ?: projectProp)?.toBoolean() == true
             && findProperty("publishGradlePlugin")?.toString()?.toBoolean() != true
         ) {
+            log("Using local projects :annotations and :processor")
             dependencies.add("commonMainImplementation", project(":annotations"))
             dependencies.add("kspCommonMainMetadata", project(":processor"))
         } else {
-            val annotationsVersion = "0.0.17"
+            val annotationsVersion = "0.0.18"
             dependencies.add("commonMainImplementation", "io.telereso.kmp:annotations:$annotationsVersion")
             dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:$annotationsVersion")
         }

@@ -103,6 +103,7 @@ class ListWrapperVisitor(
         outputStream.write(
             """
                 |package $packageString
+                |
                 |import kotlin.js.JsExport
                 |import kotlinx.serialization.Serializable
                 |
@@ -116,7 +117,7 @@ class ListWrapperVisitor(
                 |        if (this === other) return true
                 |        if (other == null || this::class != other::class) return false
                 |
-                |        other as RocketLaunchArray
+                |        other as ${className}Array
                 |
                 |        if (!array.contentEquals(other.array)) return false
                 |
@@ -138,12 +139,12 @@ class ListWrapperVisitor(
         enums: HashSet<String>
     ) {
         val modelPackageString = packageString.removeSuffix("client").plus("models")
-        val originalClassName = function.closestClassDeclaration()
+        val originalClass = function.closestClassDeclaration()!!
 
         val outputStream: OutputStream = codeGenerator.createNewFile(
             dependencies = Dependencies(false),
             packageString,
-            fileName = "${originalClassName}${
+            fileName = "${originalClass}${
                 function.simpleName.asString().snakeToUpperCamelCase()
             }Extension",
             extensionName = "kt"
@@ -153,30 +154,41 @@ class ListWrapperVisitor(
         val listFunName = function.getListFlowName()
         val arrayFunName = function.getArrayFlowName()
 
-        val typedParams = function.getTypedParametersAndroid(enums)
-        val params = function.getParametersAndroid(enums)
+        val typedParams = function.getTypedParametersAndroid(enums, true)
+        val params = function.getParametersAndroid(enums, true)
 
+        val repositoryName = originalClass.getAllProperties().firstOrNull {
+            it.type.resolve().toString() == originalClass.simpleName.asString().removeSuffix("Manager").plus("Repository")
+        }?.simpleName?.asString() ?: "repository"
+
+        val annotations = function.annotations.joinToString("\n") { "@${it.shortName.asString()}" }
         outputStream.write(
             """
             |package $packageString
             |
             |import io.telereso.kmp.core.CommonFlow
             |import io.telereso.kmp.core.Task
+            |import io.telereso.kmp.core.Log
             |import io.telereso.kmp.core.asCommonFlow
             |import kotlinx.coroutines.flow.map
             |
+            |import $modelPackageString.$modelClass.*
             |import $modelPackageString.${modelClass}List
             |import $modelPackageString.${modelClass}Array
             |
-            |fun $originalClassName.$arrayFunName($typedParams): Task<CommonFlow<${modelClass}Array>> {
+            |$annotations
+            |fun $originalClass.$arrayFunName($typedParams): Task<CommonFlow<${modelClass}Array>> {
+            |   Log.d("$originalClass","$arrayFunName")
             |   return Task.execute {
-            |       repo.$funName($params).map { ${modelClass}Array(it.toTypedArray()) }.asCommonFlow()
+            |       $repositoryName.$funName($params).map { ${modelClass}Array(it.toTypedArray()) }.asCommonFlow()
             |   }
             |}
             |
-            |fun $originalClassName.$listFunName($typedParams): Task<CommonFlow<${modelClass}List>> {
+            |$annotations
+            |fun $originalClass.$listFunName($typedParams): Task<CommonFlow<${modelClass}List>> {
+            |    Log.d("$originalClass","$listFunName")
             |    return Task.execute {
-            |        repo.$funName($params).map { ${modelClass}List(it) }.asCommonFlow()
+            |        $repositoryName.$funName($params).map { ${modelClass}List(it) }.asCommonFlow()
             |    }
             |}
             """.trimMargin().toByteArray()

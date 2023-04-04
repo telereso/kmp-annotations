@@ -178,7 +178,10 @@ class KMPModelProcessor(
 
         if (annotationName != null) {
             val resolved = resolver.getSymbolsWithAnnotation(annotationName).toList()     // 1
-            val validatedSymbols = resolved.filter { it.validate() }.toList()     // 2
+            val validatedSymbols = resolved.filter {
+                it.validate()
+                true
+            }.toList()     // 2
             val dependencies = Dependencies(false, *resolver.getAllFiles().toList().toTypedArray())
             val visitor =
                 ListWrapperVisitor(codeGenerator, dependencies, packageName)

@@ -3,7 +3,7 @@ plugins {
     kotlin("plugin.serialization")
     id("com.android.library")
     id("org.jetbrains.dokka")
-    id("io.telereso.kmp")
+    id("io.telereso.kmp").version("0.0.1-local")
 }
 
 // Setup extras variables
