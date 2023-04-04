@@ -943,10 +943,13 @@ private fun KSTypeReference.getDefault(nullability: Nullability): String {
     }
 }
 
-fun KSFunctionDeclaration.getTypedParametersAndroid(enums: HashSet<String>): String {
+fun KSFunctionDeclaration.getTypedParametersAndroid(
+    enums: HashSet<String>,
+    keepKotlinType: Boolean = false
+): String {
     return parameters.mapNotNull { p ->
         val t = p.type.resolve()
-        val nullabilityString = when (t.nullability) {
+        val nullabilityString = if (keepKotlinType) "" else when (t.nullability) {
             Nullability.NULLABLE -> "?"
             else -> ""
         }
@@ -956,7 +959,7 @@ fun KSFunctionDeclaration.getTypedParametersAndroid(enums: HashSet<String>): Str
             enums.add(paramClass.simpleName.asString())
 
         val defaultString = if (p.hasDefault) " = ${p.type.getDefault(t.nullability)}" else ""
-        p.name?.let { name -> "${name.asString()}: ${p.type.kotlinType().first}$nullabilityString$defaultString" }
+        p.name?.let { name -> "${name.asString()}: ${p.type.kotlinType(keepKotlinType).first}$nullabilityString$defaultString" }
     }.joinToString(", ")
 }
 
@@ -1057,11 +1060,14 @@ private fun KSFunctionDeclaration.getTypedHeaderParametersIosOC(): String {
 
 }
 
-fun KSFunctionDeclaration.getParametersAndroid(enums: HashSet<String>): String {
+fun KSFunctionDeclaration.getParametersAndroid(
+    enums: HashSet<String>,
+    keepKotlinType: Boolean = false
+): String {
     return parameters.mapNotNull { p ->
         p.name?.let { name ->
             val type = p.type.resolve()
-            val kotlinType = p.type.kotlinType()
+            val kotlinType = p.type.kotlinType(keepKotlinType)
             when {
                 kotlinType.second && enums.contains(p.type.toString()) ->{
                     val res = "${p.type}.valueOf(${name.asString()})"

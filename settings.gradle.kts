@@ -20,15 +20,22 @@ dependencyResolutionManagement {
 }
 rootProject.name = "kmp-annotations"
 includeBuild("convention-plugins")
-includeBuild("gradle-plugin")
 include(":annotations")
 include(":processor")
 include(":app")
 
-include(":lib")
-project(":lib").name = "annotations-client"
-include(":models")
-project(":models").name = "annotations-models"
+val publishGradlePlugin: String by settings
 
-include(":androidApp")
-include(":jvmApi")
+if (publishGradlePlugin.toBoolean()) {
+    include("gradle-plugin")
+} else {
+    includeBuild("gradle-plugin")
+    include(":lib")
+    project(":lib").name = "annotations-client"
+
+    include(":models")
+    project(":models").name = "annotations-models"
+
+    include(":androidApp")
+    include(":jvmApi")
+}

@@ -70,7 +70,10 @@ fun String.isPrimitiveKotlin(): Boolean {
     return this in listOf("String", "Boolean", "Int", "Long", "Double", "Flout")
 }
 
-fun KSTypeReference.kotlinType(): Pair<String,Boolean> {
+fun KSTypeReference.kotlinType(keepKotlinType: Boolean = false): Pair<String, Boolean> {
+    if (keepKotlinType) {
+        return resolve().toString() to false
+    }
     return when (this.toString()) {
         "Boolean" -> "Boolean" to false
         "Int" -> "Int" to false

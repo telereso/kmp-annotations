@@ -12,7 +12,7 @@ plugins {
     id("com.adarshr.test-logger") version "3.2.0"
     id("org.jetbrains.dokka")
     id("com.codingfeline.buildkonfig")
-    id("io.telereso.kmp")
+    id("io.telereso.kmp").version("0.0.1-local")
 }
 
 
