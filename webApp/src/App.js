@@ -2,6 +2,7 @@ import logo from './logo.svg';
 import './App.css';
 import React, { useState ,useEffect} from 'react';
 const AnnotationsClient = require('annotations-client').io.telereso.annotations.client
+const AnnotationsModels = require('annotations-client').io.telereso.annotations.models
 
 const manger = new AnnotationsClient.AnnotationsClientManager.Builder().build()
 window.manger = manger
@@ -11,7 +12,7 @@ function App() {
     const [text, setText] = useState("Loading....");
 
     useEffect(() => {
-        manger.fetchLaunchRockets(true)
+        manger.fetchLaunchRockets(AnnotationsModels.RocketLaunch.Type)
             .onSuccess((e) => {
                 console.log("onSuccess",e)
             })

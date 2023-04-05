@@ -12,7 +12,7 @@ class AnnotationsClient: RCTEventEmitter {
             return nil
         }
     }
-    // uncomment for testing, handle builder constructor if changed 
+    // uncomment for testing, handle builder constructor if changed
     // var a = AnnotationsClientManager.Builder(databaseDriverFactory: DatabaseDriverFactory()).build()
     var manager = getManger()
 
@@ -41,7 +41,7 @@ class AnnotationsClient: RCTEventEmitter {
         if (manager == nil) {
             reject("fetchLaunchRockets error", "AnnotationsClientManager was not initialized", "AnnotationsClientManager was not initialized")
         } else {
-            
+
             manager!.fetchLaunchRockets(forceReload: forceReload ? true : false)
                     .onSuccess { result in
                         guard let res = result else {
@@ -55,12 +55,40 @@ class AnnotationsClient: RCTEventEmitter {
         }
     }
 
+    @objc(fetchLaunchRocketsByType:withResolver:withRejecter:)
+    func fetchLaunchRocketsByType(type: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
+        if (manager == nil) {
+            reject("fetchLaunchRocketsByType error", "AnnotationsClientManager was not initialized", "AnnotationsClientManager was not initialized")
+        } else {
+            let typeValue: RocketLaunch.Type_
+            switch type {
+            case "FIRST":
+                typeValue = RocketLaunch.Type_.first
+            case "SECOND":
+                typeValue = RocketLaunch.Type_.second
+            default:
+                typeValue = RocketLaunch.Type_.first
+            }
+
+            manager!.fetchLaunchRocketsByType(type: typeValue)
+                    .onSuccess { result in
+                        guard let res = result else {
+                            return
+                        }
+                        resolve(RocketLaunch.Companion().toJson(array: res))
+                    }
+                    .onFailure { KotlinThrowable in
+                        reject("fetchLaunchRocketsByType error", "fetchLaunchRocketsByType error", KotlinThrowable.asError())
+                    }
+        }
+    }
+
     @objc(testDefaultParam:withResolver:withRejecter:)
     func testDefaultParam(param: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
         if (manager == nil) {
             reject("testDefaultParam error", "AnnotationsClientManager was not initialized", "AnnotationsClientManager was not initialized")
         } else {
-            
+
             resolve(manager!.testDefaultParam(param: param))
         }
     }
@@ -70,7 +98,7 @@ class AnnotationsClient: RCTEventEmitter {
         if (manager == nil) {
             reject("getFlow error", "AnnotationsClientManager was not initialized", "AnnotationsClientManager was not initialized")
         } else {
-            
+
             manager!.getFlow(param: param).watch { (result: NSString?, error: ClientException?) in
                         if(error != nil){
                            return reject("getFlow error", "getFlow error", error?.message ?? "empty message")
@@ -89,8 +117,8 @@ class AnnotationsClient: RCTEventEmitter {
         if (manager == nil) {
             reject("getFirstRocketLaunchFlow error", "AnnotationsClientManager was not initialized", "AnnotationsClientManager was not initialized")
         } else {
-            
-            
+
+
             manager!.getFirstRocketLaunchFlow().onSuccess { streamResult in
                         guard let stream = streamResult else {
                             return
@@ -117,8 +145,8 @@ class AnnotationsClient: RCTEventEmitter {
         if (manager == nil) {
             reject("getRocketLaunchesFlow error", "AnnotationsClientManager was not initialized", "AnnotationsClientManager was not initialized")
         } else {
-            
-            
+
+
             manager!.getRocketLaunchesArrayFlow(param: param).onSuccess { streamResult in
                         guard let stream = streamResult else {
                             return
@@ -145,8 +173,8 @@ class AnnotationsClient: RCTEventEmitter {
         if (manager == nil) {
             reject("getArrayRocketLaunchFlow error", "AnnotationsClientManager was not initialized", "AnnotationsClientManager was not initialized")
         } else {
-            
-            
+
+
             manager!.getArrayRocketLaunchFlow(rocketLaunch: RocketLaunch.companion.fromJson(json: rocketLaunch)).onSuccess { streamResult in
                         guard let stream = streamResult else {
                             return
@@ -173,7 +201,7 @@ class AnnotationsClient: RCTEventEmitter {
         if (manager == nil) {
             reject("testSkip error", "AnnotationsClientManager was not initialized", "AnnotationsClientManager was not initialized")
         } else {
-            
+
             resolve(manager!.testSkip(param: param))
         }
     }

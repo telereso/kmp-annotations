@@ -9,6 +9,10 @@ RCT_EXTERN_METHOD(fetchLaunchRockets:(NSNumber)forceReload
                  withResolver:(RCTPromiseResolveBlock)resolve
                  withRejecter:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(fetchLaunchRocketsByType:(NSString)type
+                 withResolver:(RCTPromiseResolveBlock)resolve
+                 withRejecter:(RCTPromiseRejectBlock)reject)
+
 RCT_EXTERN_METHOD(testDefaultParam:(NSString)param
                  withResolver:(RCTPromiseResolveBlock)resolve
                  withRejecter:(RCTPromiseRejectBlock)reject)

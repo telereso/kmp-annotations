@@ -145,6 +145,12 @@ class AnnotationsClientManager private constructor(
         }
     }
 
+    fun fetchLaunchRocketsByType(type: RocketLaunch.Type? = null): Task<Array<RocketLaunch>> {
+        return Task.execute {
+            repo.getLaunchRockets(true, type).toTypedArray()
+        }
+    }
+
     fun testDefaultParam(param: String = "") {
 
     }

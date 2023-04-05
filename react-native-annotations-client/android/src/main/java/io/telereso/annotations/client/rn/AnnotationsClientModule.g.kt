@@ -30,6 +30,15 @@ class AnnotationsClientModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
+  fun fetchLaunchRocketsByType(type: String? = null, promise: Promise) {
+    manager.fetchLaunchRocketsByType(type?.let { RocketLaunch.Type.valueOf(type) }).onSuccess {
+      promise.resolve(RocketLaunch.toJson(it))
+    }.onFailure {
+      promise.reject(it)
+    }
+  }
+
+  @ReactMethod
   fun testDefaultParam(param: String = "", promise: Promise) {
        try {
           promise.resolve(manager.testDefaultParam(param)) 
@@ -44,7 +53,7 @@ class AnnotationsClientModule(reactContext: ReactApplicationContext) :
    Task.execute {
      val emitter =
        reactApplicationContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-     manager.getFlow(param).collect {
+       manager.getFlow(param).collect {
        emitter.emit("${NAME}_getFlow_1ps", it)
      }
      promise.resolve(true)

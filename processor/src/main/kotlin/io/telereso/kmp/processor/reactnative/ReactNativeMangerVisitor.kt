@@ -374,7 +374,7 @@ class ReactNativeMangerVisitor(
 
         val modelImportString =
             modelImports
-                .filter { m -> !skipClasses.any { s -> m.startsWith(s,true) } }
+                .filter { m -> !skipClasses.any { s -> m.startsWith(s, true) } && !m.contains(".") }
                 .map { it.removeSuffix("?") }
                 .distinct()
                 .joinToString("\n") {
@@ -385,7 +385,7 @@ class ReactNativeMangerVisitor(
 
         val modelJsonImportString =
             modelFromJsonImports
-                .filter { m -> !skipClasses.any { s -> m.startsWith(s,true) } }
+                .filter { m -> !skipClasses.any { s -> m.startsWith(s, true) } && !m.contains(".") }
                 .map { it.removeSuffix("?") }
                 .distinct()
                 .joinToString("\n") {
@@ -655,7 +655,7 @@ private fun KSFunctionDeclaration.getMethodBodyAndroid(enums: HashSet<String>): 
             |   Task.execute {
             |     val emitter =
             |       reactApplicationContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-            |     manager.$funName(${getParametersAndroid(enums)}).collect {
+            |       manager.$funName(${getParametersAndroid(enums)}).collect {
             |       emitter.emit("${escapedName}_${funName}_${getParametersSignature()}", ${res.first})
             |     }
             |     promise.resolve(true)
@@ -955,8 +955,10 @@ fun KSFunctionDeclaration.getTypedParametersAndroid(
         }
 
         val paramClass = t.declaration.closestClassDeclaration()
-        if (paramClass?.classKind == ClassKind.ENUM_CLASS)
-            enums.add(paramClass.simpleName.asString())
+        if (paramClass?.classKind == ClassKind.ENUM_CLASS) {
+            enums.add(paramClass.getEnumTypeWithParent())
+        }
+
 
         val defaultString = if (p.hasDefault) " = ${p.type.getDefault(t.nullability)}" else ""
         p.name?.let { name -> "${name.asString()}: ${p.type.kotlinType(keepKotlinType).first}$nullabilityString$defaultString" }
@@ -968,7 +970,7 @@ private fun KSFunctionDeclaration.getTypedParametersIos(enums: HashMap<String,Li
         val t = p.type.resolve()
         val paramClass = t.declaration.closestClassDeclaration()
         if (paramClass?.classKind == ClassKind.ENUM_CLASS){
-            enums[paramClass.simpleName.asString()] =
+            enums[paramClass.getEnumTypeWithParent()] =
                 paramClass.getEnumEntries().map { it.simpleName.asString() }.toList()
         }
 
@@ -985,7 +987,7 @@ private fun KSFunctionDeclaration.getTypedParametersJs(enums: HashMap<String, Li
             val t = p.type.resolve()
             val paramClass = t.declaration.closestClassDeclaration()
             if (paramClass?.classKind == ClassKind.ENUM_CLASS) {
-                enums[paramClass.simpleName.asString()] =
+                enums[paramClass.getEnumTypeWithParent()] =
                     paramClass.getEnumEntries().map { it.simpleName.asString() }.toList()
             }
             if (type.startsWith("typeof ")) {
@@ -1069,16 +1071,17 @@ fun KSFunctionDeclaration.getParametersAndroid(
             val type = p.type.resolve()
             val kotlinType = p.type.kotlinType(keepKotlinType)
             when {
-                kotlinType.second && enums.contains(p.type.toString()) ->{
-                    val res = "${p.type}.valueOf(${name.asString()})"
+                kotlinType.second && enums.contains(type.declaration.getEnumTypeWithParent()) -> {
+                    val res =
+                        "${type.declaration.getEnumTypeWithParent()}.valueOf(${name.asString()})"
 
-                    if(p.hasDefault && type.isMarkedNullable){
+                    if (p.hasDefault && type.isMarkedNullable) {
                         "${name.asString()}?.let { $res }"
-                    }else {
+                    } else {
                         res
                     }
                 }
-                kotlinType.second ->{
+                kotlinType.second -> {
                     "${p.type}.fromJson(${name.asString()})"
                 }
                 else -> {
@@ -1093,27 +1096,42 @@ private fun KSFunctionDeclaration.getParametersIos(enums: HashMap<String, List<S
     val enumSwitch = StringBuilder()
     return parameters.mapNotNull { p ->
         p.name?.let { name ->
+            val type = p.type.resolve()
             val iosType = p.type.swiftType()
-            val typeString = p.type.toString()
-            val paramIos = when  {
-                iosType.second && enums.keys.contains(typeString) -> {
+            val paramIos = when {
+                iosType.second &&
+                        type.declaration.closestClassDeclaration()?.classKind == ClassKind.ENUM_CLASS
+                        && enums.keys.contains(type.getEnumTypeWithParent()) -> {
                     val enumValue = "${name.asString()}Value"
-                    val enumEntries = enums[typeString] ?: emptyList()
-                    enumSwitch.appendLine("""
-                        |let $enumValue: ${p.type}
+                    val enumEntries = enums[type.getEnumTypeWithParent()] ?: emptyList()
+                    var typeClass = type.getEnumTypeWithParent()
+                    if (typeClass.endsWith(".Type")) {
+                        typeClass = typeClass.replace(".Type", ".Type_")
+                    }
+                    enumSwitch.appendLine(
+                        """
+                        |let $enumValue: $typeClass
                         |            switch ${name.asString()} {
-                    """.trimMargin())
+                    """.trimMargin()
+                    )
 
-                    enumEntries.forEach { e->
-                        enumSwitch.appendLine("""
+                    enumEntries.forEach { e ->
+                        enumSwitch.appendLine(
+                            """
                         |            case "$e":
-                        |                $enumValue = ${p.type}.${e.lowercase().snakeToLowerCamelCase()}
-                    """.trimMargin())
+                        |                $enumValue = ${typeClass}.${
+                                e.lowercase().snakeToLowerCamelCase()
+                            }
+                    """.trimMargin()
+                        )
                     }
 
-                    enumSwitch.appendLine("""
+                    enumSwitch.appendLine(
+                        """
                         |            default:
-                        |                $enumValue = ${p.type}.${enumEntries.first().lowercase().snakeToLowerCamelCase()}
+                        |                $enumValue = ${typeClass}.${
+                            enumEntries.first().lowercase().snakeToLowerCamelCase()
+                        }
                         |            }
                     """.trimMargin())
 
@@ -1135,10 +1153,14 @@ private fun KSFunctionDeclaration.getParametersJs(enums: HashMap<String, List<St
     return parameters.mapNotNull { p ->
         p.name?.let { name ->
             val typeString = p.type.toString()
+            val paramClass = p.type.resolve().declaration.closestClassDeclaration()
+
             val jsType = p.type.jsType(p.hasDefault)
-            when{
-                enums.keys.contains(typeString) -> {
-                    "${typeString.replaceFirstChar { it.lowercase(Locale.getDefault()) }}.name"
+            when {
+                paramClass?.classKind == ClassKind.ENUM_CLASS && enums.keys.contains(
+                    p.type.resolve().getEnumTypeWithParent()
+                ) -> {
+                    "${name.asString()}.name"
                 }
                 jsType.startsWith("typeof") -> {
                     paramClasses.add(jsType.removePrefix("typeof "))

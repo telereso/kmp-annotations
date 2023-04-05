@@ -2,7 +2,8 @@ import * as React from 'react';
 
 import { StyleSheet, View, Text } from 'react-native';
 import {
-  fetchLaunchRockets,
+  // fetchLaunchRockets,
+  fetchLaunchRocketsByType,
   getFirstRocketLaunchFlow,
   getFlow,
   getRocketLaunchesFlow,
@@ -19,7 +20,7 @@ export default function App() {
     []
   );
   React.useEffect(() => {
-    fetchLaunchRockets(true)
+    fetchLaunchRocketsByType(RocketLaunch.Type.FIRST)
       .then((data) => {
         setRockets(data);
       })

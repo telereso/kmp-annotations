@@ -19,7 +19,17 @@ internal class AnnotationsClientRepository(
     }
 
     @Throws(Exception::class)
-    suspend fun getLaunchRockets(forceReload: Boolean = false): List<RocketLaunch> {
+    suspend fun getLaunchRockets(
+        forceReload: Boolean = false
+    ): List<RocketLaunch> {
+        return getLaunchRockets(forceReload, null)
+    }
+
+    @Throws(Exception::class)
+    suspend fun getLaunchRockets(
+        forceReload: Boolean = false,
+        type: RocketLaunch.Type? = null
+    ): List<RocketLaunch> {
         logDebug("getLaunchRockets , count ${settingsManager.fetchCount}")
         val cachedLaunches = dao.getAllRocketLaunches()
 
