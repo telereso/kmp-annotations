@@ -161,6 +161,7 @@ class ListWrapperVisitor(
             it.type.resolve().toString() == originalClass.simpleName.asString().removeSuffix("Manager").plus("Repository")
         }?.simpleName?.asString() ?: "repository"
 
+        val annotationsImports = function.annotations.joinToString("\n") { "import ${it.annotationType.resolve().declaration.packageName.asString()}.${it.shortName.asString()}" }
         val annotations = function.annotations.joinToString("\n") { "@${it.shortName.asString()}" }
         outputStream.write(
             """
@@ -175,6 +176,7 @@ class ListWrapperVisitor(
             |import $modelPackageString.$modelClass.*
             |import $modelPackageString.${modelClass}List
             |import $modelPackageString.${modelClass}Array
+            |$annotationsImports
             |
             |$annotations
             |fun $originalClass.$arrayFunName($typedParams): Task<CommonFlow<${modelClass}Array>> {

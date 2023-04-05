@@ -37,7 +37,6 @@ buildscript {
 plugins {
   id("org.jetbrains.kotlin.multiplatform") version("1.7.20") apply false
   id("com.google.devtools.ksp") version "1.7.22-1.0.8" apply false
-  id("io.telereso.kmp") version "0.0.1-local" apply false
 }
 
 allprojects {

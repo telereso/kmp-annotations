@@ -66,6 +66,24 @@ fun KSClassDeclaration.getEnumEntries(): Sequence<KSDeclaration> {
     return declarations.filter { it.closestClassDeclaration()?.classKind == ClassKind.ENUM_ENTRY }
 }
 
+fun KSClassDeclaration.getEnumTypeWithParent(): String {
+    return parentDeclaration?.let {
+        "${it.simpleName.asString()}.${simpleName.asString()}"
+    } ?: simpleName.asString()
+}
+
+fun KSDeclaration.getEnumTypeWithParent(): String {
+    return parentDeclaration?.let {
+        "${it.simpleName.asString()}.${simpleName.asString()}"
+    } ?: simpleName.asString()
+}
+
+fun KSType.getEnumTypeWithParent(): String {
+    return declaration.parentDeclaration?.let {
+        "${it.simpleName.asString()}.${declaration.simpleName.asString()}"
+    } ?: declaration.simpleName.asString()
+}
+
 fun String.isPrimitiveKotlin(): Boolean {
     return this in listOf("String", "Boolean", "Int", "Long", "Double", "Flout")
 }
@@ -105,6 +123,9 @@ fun KSTypeReference.objectiveCType(): String {
 
 fun KSTypeReference.jsType(hasDefault: Boolean): String {
     val t = resolve()
+    if(t.declaration.closestClassDeclaration()?.classKind ==  ClassKind.ENUM_CLASS){
+        return "typeof ${t.getEnumTypeWithParent()}"
+    }
     return resolveJsType(t.declaration.simpleName.asString(), t.isMarkedNullable, hasDefault).removeSuffix("?")
 }
 

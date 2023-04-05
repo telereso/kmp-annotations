@@ -22,6 +22,7 @@ data class RocketLaunch(
      */
     @SerialName("flight_number")
     val flightNumber: Int? = null,
+    val type: Type? = null,
 
     // we dont need to set the SerialName to avoid double work.
     val mission_name: String? = null,
@@ -38,7 +39,11 @@ data class RocketLaunch(
     val launchSuccess: Boolean? = null,
     @SerialName("links")
     val links: Links? = null,
-)
+){
+    enum class Type {
+        FIRST, SECOND
+    }
+}
 
 @Serializable
 @OptIn(ExperimentalJsExport::class)

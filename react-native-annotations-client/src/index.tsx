@@ -51,6 +51,19 @@ export function fetchLaunchRockets(forceReload: boolean): Promise<typeof RocketL
 }
 
 
+export function fetchLaunchRocketsByType(type: typeof RocketLaunch.Type): Promise<typeof RocketLaunch> {
+  return new Promise<typeof RocketLaunch>((resolve, reject) => {
+    AnnotationsClient.fetchLaunchRocketsByType(type.name)
+      .then((data: string) => {
+        resolve(RocketLaunchFromJsonArray(RocketLaunch.Companion, data));
+      })
+      .catch((e: any) => {
+        reject(e);
+      });
+})      
+}
+
+
 export function testDefaultParam(param: String = ''): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     AnnotationsClient.testDefaultParam(param)
