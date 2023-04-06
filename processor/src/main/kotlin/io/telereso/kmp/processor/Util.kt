@@ -26,8 +26,8 @@ package io.telereso.kmp.processor
 
 import com.google.devtools.ksp.closestClassDeclaration
 import com.google.devtools.ksp.symbol.*
-import io.telereso.kmp.processor.reactnative.CLASS_COMMON_FLOW
 
+const val CLASS_COMMON_FLOW = "CommonFlow"
 const val PREFIX_TASK = "Task<"
 const val PREFIX_TASK_ARRAY = "Task<Array<"
 const val PREFIX_TASK_COMMON_FLOW = "Task<$CLASS_COMMON_FLOW<"

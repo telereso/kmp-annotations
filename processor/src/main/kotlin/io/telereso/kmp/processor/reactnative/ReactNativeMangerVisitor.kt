@@ -37,7 +37,6 @@ import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
 
-const val CLASS_COMMON_FLOW = "CommonFlow"
 const val CLASS_EMITTER_SUBSCRIPTION = "EmitterSubscription"
 
 class ReactNativeMangerVisitor(
@@ -482,6 +481,15 @@ private fun KSFunctionDeclaration.getResultAndroid(enums: HashSet<String>): Pair
     val typeString = type?.toString()
     return when {
         typeString == null -> "it" to null
+        typeString.startsWith(CLASS_COMMON_FLOW) -> {
+            val commonFlowClass = REGEX_COMMON_FLOW.find(typeString)?.value
+            if (commonFlowClass?.isPrimitiveKotlin() == true) {
+                "it" to null
+            } else {
+                val nullabilityString = if (commonFlowClass?.endsWith("?") == true) "?" else ""
+                "it${nullabilityString}.toJson()" to commonFlowClass
+            }
+        }
         typeString.startsWith(PREFIX_TASK_ARRAY) -> {
             val klass = REGEX_TASK_ARRAY.find(typeString)?.value
 
@@ -602,6 +610,13 @@ private fun KSFunctionDeclaration.getResultJs(): Pair<String, String?> {
         type.startsWith("String") -> "data" to "String"
         type.startsWith("Boolean") -> "data" to "boolean"
         type.startsWith("Int") -> "data" to "number"
+        type.startsWith(CLASS_COMMON_FLOW) -> {
+            val commonFlowClass = REGEX_COMMON_FLOW.find(type)?.value?.removeSuffix("?")
+            if (commonFlowClass?.isPrimitiveKotlin() == true)
+                "data" to null
+            else
+                "${commonFlowClass}FromJson(${commonFlowClass}.Companion, data)" to commonFlowClass
+        }
         type.startsWith(PREFIX_TASK_ARRAY) -> {
             val klass = REGEX_TASK_ARRAY.find(type)?.value?.jsType()?.removePrefix("typeof ")
             "${klass}FromJsonArray(${klass}.Companion, data)" to klass
@@ -827,6 +842,28 @@ private fun KSFunctionDeclaration.getMethodBodyJs(
     val type = returnType?.resolve()?.toString()
     val res = getResultJs()
     val params = getParametersJs(enums)
+    val returnList = mutableListOf<String>()
+    fun addResultImport(){
+        returnList.apply {
+            if (!res.second.isNullOrEmpty()
+                && res.second?.jsType()?.startsWith("typeof") == true
+                && res.first.isNotEmpty()
+                && res.first != "data"
+            ) {
+                add(res.second!!)
+            }
+        }
+    }
+//    val imports = mutableSetOf<String>().apply {
+//        if (!res.second.isNullOrEmpty()
+//            && res.second?.jsType()?.startsWith("typeof") == true
+//            && res.first.isNotEmpty()
+//            && res.first != "data"
+//        ) {
+//            add(res.second!!)
+//        }
+//        addAll(params.second)
+//    }
     val funName = simpleName.asString()
 
     return when {
@@ -836,6 +873,9 @@ private fun KSFunctionDeclaration.getMethodBodyJs(
             val commonFlowClass = REGEX_COMMON_FLOW.find(type)?.value
             val commonFlowListClass = REGEX_COMMON_FLOW_LIST.find(type)?.value
             val commonFlowArrayClass = REGEX_COMMON_FLOW_ARRAY.find(type)?.value
+
+            returnList.add(CLASS_EMITTER_SUBSCRIPTION)
+            returnList.add(commonFlowListClass.jsTypeClass())
 
             when {
                 !commonFlowListClass.isNullOrEmpty() || !commonFlowArrayClass.isNullOrEmpty() -> {
@@ -854,7 +894,7 @@ private fun KSFunctionDeclaration.getMethodBodyJs(
                 |  return eventListener;
                 |
             """.trimMargin(),
-                        listOf(CLASS_EMITTER_SUBSCRIPTION, commonFlowListClass.jsTypeClass()),
+                        returnList.apply { addResultImport() },
                         params.second
                     )
                 }
@@ -874,7 +914,7 @@ private fun KSFunctionDeclaration.getMethodBodyJs(
                 |  return eventListener;
                 |
             """.trimMargin(),
-                        listOf(CLASS_EMITTER_SUBSCRIPTION,commonFlowClass.jsTypeClass()),
+                        returnList.apply { addResultImport() },
                         params.second
                     )
                 }
@@ -883,6 +923,7 @@ private fun KSFunctionDeclaration.getMethodBodyJs(
         }
         type.startsWith(CLASS_COMMON_FLOW) -> {
             val commonFlowClass = REGEX_COMMON_FLOW.find(type)?.value
+            returnList.add(CLASS_EMITTER_SUBSCRIPTION)
             Triple(
                 """
                 | const eventEmitter = new NativeEventEmitter($className);
@@ -898,7 +939,8 @@ private fun KSFunctionDeclaration.getMethodBodyJs(
                 |  return eventListener;
                 |
             """.trimMargin(),
-                listOf(CLASS_EMITTER_SUBSCRIPTION), params.second
+                returnList.apply { addResultImport() },
+                params.second
             )
         }
         else -> {
@@ -910,7 +952,7 @@ private fun KSFunctionDeclaration.getMethodBodyJs(
             }
             val resolveString = if (type == "Unit") "" else res.first
             val returnType = "Promise<${res.second.jsType()}>"
-
+            returnList.add(returnType)
             Triple(
                 """
             |return new $returnType((resolve, reject) => {
@@ -923,7 +965,7 @@ private fun KSFunctionDeclaration.getMethodBodyJs(
             |      });
             |})      
             """.trimMargin(),
-                listOf(returnType),
+                returnList.apply { addResultImport() },
                 params.second
             )
         }
