@@ -215,18 +215,13 @@ class ReactNativeMangerVisitor(
             |extension String: Error {
             |}
             |
+            |public class ${className}Instance {
+            |   public static var shared : ${className}Manager? = nil
+            |}
+            |
+            |
             |@objc($className)
             |class $className: RCTEventEmitter {
-            |    private class func getManger() -> ${className}Manager? {
-            |        do {
-            |            return try ${className}Manager.Companion().getInstance()
-            |        } catch {
-            |            return nil
-            |        }
-            |    }
-            |    // uncomment for testing, handle builder constructor if changed 
-            |    // var a = ${className}Manager.Builder(databaseDriverFactory: DatabaseDriverFactory()).build()
-            |    var manager = getManger()
             |
             |    private var hasListeners = false;
             |
@@ -553,7 +548,7 @@ private fun KSFunctionDeclaration.getResultIos(): Pair<String, String?> {
             if (commonFlowClass?.isPrimitiveKotlin() == true) {
                 "res" to returnType?.objectiveCType()
             } else {
-                "${commonFlowClass}.toJson(it)" to commonFlowClass
+                "res.toJson()" to commonFlowClass
             }
         }
         type.startsWith(PREFIX_TASK_ARRAY) -> {
@@ -743,11 +738,11 @@ private fun KSFunctionDeclaration.getMethodBodyIos(
 
             Triple(
                 """
-            |if (manager == nil) {
+            |if (${className}Instance.shared == nil) {
             |            reject("$funName error", "${className}Manager was not initialized", "${className}Manager was not initialized")
             |        } else {
             |            ${paramsRes.second}
-            |            manager!.${funName}(${paramsRes.first}).watch { (result: ${res.second}?, error: ClientException?) in
+            |            ${className}Instance.shared!.${funName}(${paramsRes.first}).watch { (result: ${res.second}?, error: ClientException?) in
             |                        if(error != nil){
             |                           return reject("${simpleName.asString()} error", "${simpleName.asString()} error", error?.message ?? "empty message")
             |                        }
@@ -769,12 +764,12 @@ private fun KSFunctionDeclaration.getMethodBodyIos(
             }
             Triple(
                 """
-            |if (manager == nil) {
+            |if (${className}Instance.shared == nil) {
             |            reject("$funName error", "${className}Manager was not initialized", "${className}Manager was not initialized")
             |        } else {
             |            ${paramsRes.second}
             |            
-            |            manager!.${funNameList ?: funName}(${paramsRes.first}).onSuccess { streamResult in
+            |            ${className}Instance.shared!.${funNameList ?: funName}(${paramsRes.first}).onSuccess { streamResult in
             |                        guard let stream = streamResult else {
             |                            return
             |                        }
@@ -789,8 +784,8 @@ private fun KSFunctionDeclaration.getMethodBodyIos(
             |                        }
             |                        resolve(true)
             |                    }
-            |                    .onFailure { KotlinThrowable in
-            |                        reject("${simpleName.asString()} error", "${simpleName.asString()} error", KotlinThrowable.asError())
+            |                    .onFailure { clientException in
+            |                        reject("${simpleName.asString()} error", "${simpleName.asString()} error", clientException.message ?? "${simpleName.asString()} error")
             |                    }
             |        }
             """.trimMargin(), res.second, listOf(eventName)
@@ -801,19 +796,19 @@ private fun KSFunctionDeclaration.getMethodBodyIos(
             val res = getResultIos()
             Triple(
                 """
-            |if (manager == nil) {
+            |if (${className}Instance.shared == nil) {
             |            reject("${simpleName.asString()} error", "${className}Manager was not initialized", "${className}Manager was not initialized")
             |        } else {
             |            ${paramsRes.second}
-            |            manager!.${simpleName.asString()}(${paramsRes.first})
+            |            ${className}Instance.shared!.${simpleName.asString()}(${paramsRes.first})
             |                    .onSuccess { result in
             |                        guard let res = result else {
             |                            return
             |                        }
             |                        resolve(${res.first})
             |                    }
-            |                    .onFailure { KotlinThrowable in
-            |                        reject("${simpleName.asString()} error", "${simpleName.asString()} error", KotlinThrowable.asError())
+            |                    .onFailure { clientException in
+            |                        reject("${simpleName.asString()} error", "${simpleName.asString()} error", clientException.message ?? "${simpleName.asString()} error")
             |                    }
             |        }
             """.trimMargin(), res.second, emptyList()
@@ -822,11 +817,11 @@ private fun KSFunctionDeclaration.getMethodBodyIos(
         else -> {
             Triple(
                 """
-            |if (manager == nil) {
+            |if (${className}Instance.shared == nil) {
             |            reject("${simpleName.asString()} error", "${className}Manager was not initialized", "${className}Manager was not initialized")
             |        } else {
             |            ${paramsRes.second}
-            |            resolve(manager!.${simpleName.asString()}(${paramsRes.first}))
+            |            resolve(${className}Instance.shared!.${simpleName.asString()}(${paramsRes.first}))
             |        }
             """.trimMargin(), null, emptyList()
             )
