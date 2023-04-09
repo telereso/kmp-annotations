@@ -37,6 +37,7 @@ import java.io.File
 import java.util.*
 
 const val KEY_TELERESO_KMP_DEVELOPMENT_MODE = "teleresoKmpDevelopmentMode"
+const val KEY_TELERESO_KMP_VERSION = "teleresoKmpVersion"
 class KmpPlugin : Plugin<Project> {
     override fun apply(project: Project): Unit = project.run {
 
@@ -57,17 +58,17 @@ class KmpPlugin : Plugin<Project> {
             }
         }
 
-        val localProp = localProps[KEY_TELERESO_KMP_DEVELOPMENT_MODE]?.toString()
-        val projectProp = findProperty(KEY_TELERESO_KMP_DEVELOPMENT_MODE)?.toString()
+        val devModeLocalProp = localProps[KEY_TELERESO_KMP_DEVELOPMENT_MODE]?.toString()
+        val devModeProjectProp = findProperty(KEY_TELERESO_KMP_DEVELOPMENT_MODE)?.toString()
 
-        if ((localProp ?: projectProp)?.toBoolean() == true
+        if ((devModeLocalProp ?: devModeProjectProp)?.toBoolean() == true
             && findProperty("publishGradlePlugin")?.toString()?.toBoolean() != true
         ) {
             log("Using local projects :annotations and :processor")
             dependencies.add("commonMainImplementation", project(":annotations"))
             dependencies.add("kspCommonMainMetadata", project(":processor"))
         } else {
-            val annotationsVersion = "0.0.20"
+            val annotationsVersion = property(KEY_TELERESO_KMP_VERSION).toString()
             dependencies.add("commonMainImplementation", "io.telereso.kmp:annotations:$annotationsVersion")
             dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:$annotationsVersion")
         }
