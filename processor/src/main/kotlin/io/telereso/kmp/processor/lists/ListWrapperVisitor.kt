@@ -52,7 +52,7 @@ class ListWrapperVisitor(
 
 //        val modelsPackageString = originalPackageString.removeSuffix("client").plus("models")
 
-        createFunctionsWrapper(
+        createCommonFlowFunctionsWrapper(
             packageString,
             commonFlowListClass,
             function,
@@ -82,9 +82,15 @@ class ListWrapperVisitor(
                         && !it.skipListWrapper()
                         && !skipFunctions.contains(it.simpleName.asString())
             }.forEach { function ->
+                var isCommonFlow = false
                 function.getCommonFlowListClass()?.let { c ->
-                    createFunctionsWrapper(packageString, c, function, enums)
+                    isCommonFlow = true
+                    createCommonFlowFunctionsWrapper(packageString, c, function, enums)
                 }
+                if (!isCommonFlow)
+                    function.getTaskListClass()?.let { c ->
+                        createTaskFunctionsWrapper(packageString, c, function, enums)
+                    }
             }
         }
     }
@@ -132,7 +138,7 @@ class ListWrapperVisitor(
         )
     }
 
-    private fun createFunctionsWrapper(
+    private fun createCommonFlowFunctionsWrapper(
         packageString: String,
         modelClass: String,
         function: KSFunctionDeclaration,
@@ -178,6 +184,11 @@ class ListWrapperVisitor(
             |import $modelPackageString.${modelClass}Array
             |$annotationsImports
             |
+            |/**
+            |* Platform : iOS, JS
+            |* Origin: [$originalClass.$funName]
+            |* Generated function to provide a wrapper for an array response
+            |*/
             |$annotations
             |fun $originalClass.$arrayFunName($typedParams): Task<CommonFlow<${modelClass}Array>> {
             |   Log.d("$originalClass","$arrayFunName")
@@ -186,11 +197,104 @@ class ListWrapperVisitor(
             |   }
             |}
             |
+            |/**
+            |* Platform : iOS
+            |* Origin: [$originalClass.$funName]
+            |* Generated function to provide a wrapper for a list response
+            |*/
             |$annotations
             |fun $originalClass.$listFunName($typedParams): Task<CommonFlow<${modelClass}List>> {
             |    Log.d("$originalClass","$listFunName")
             |    return Task.execute {
             |        $repositoryName.$funName($params).map { ${modelClass}List(it) }.asCommonFlow()
+            |    }
+            |}
+            """.trimMargin().toByteArray()
+        )
+    }
+
+    private fun createTaskFunctionsWrapper(
+        packageString: String,
+        modelClass: String,
+        function: KSFunctionDeclaration,
+        enums: HashSet<String>
+    ) {
+        val modelPackageString = packageString.removeSuffix("client").plus("models")
+        val originalClass = function.closestClassDeclaration()!!
+
+        val outputStream: OutputStream = codeGenerator.createNewFile(
+            dependencies = Dependencies(false),
+            packageString,
+            fileName = "${originalClass}${
+                function.simpleName.asString().snakeToUpperCamelCase()
+            }Extension",
+            extensionName = "kt"
+        )
+
+        val funName = function.simpleName.asString()
+        val listFunName = "${funName}List"
+        val arrayFunName = "${funName}Array"
+
+        val typedParams = function.getTypedParametersAndroid(enums, true)
+        val params = function.getParametersAndroid(enums, true)
+
+        val repositoryName = originalClass.getAllProperties().firstOrNull {
+            it.type.resolve().toString() == originalClass.simpleName.asString()
+                .removeSuffix("Manager").plus("Repository")
+        }?.simpleName?.asString() ?: "repository"
+
+        val annotationsImports =
+            function.annotations.joinToString("\n") { "import ${it.annotationType.resolve().declaration.packageName.asString()}.${it.shortName.asString()}" }
+        val annotations = function.annotations.joinToString("\n") { "@${it.shortName.asString()}" }
+        outputStream.write(
+            """
+            |package $packageString
+            |
+            |import io.telereso.kmp.core.Task
+            |import io.telereso.kmp.core.Log
+            |
+            |import $modelPackageString.$modelClass
+            |import $modelPackageString.$modelClass.*
+            |import $modelPackageString.${modelClass}List
+            |import $modelPackageString.${modelClass}Array
+            |$annotationsImports
+            |
+            |/**
+            |* Platform : JS
+            |* Origin: [$originalClass.$funName]
+            |* Generated function to provide an array equivalent of the list response 
+            |*/
+            |$annotations
+            |fun $originalClass.$arrayFunName($typedParams): Task<Array<${modelClass}>> {
+            |   Log.d("$originalClass","$funName")
+            |   return Task.execute {
+            |       $repositoryName.$funName($params).toTypedArray()
+            |   }
+            |}
+            |
+            |/**
+            |* Platform : iOS, JS
+            |* Origin: [$originalClass.$funName]
+            |* Generated function to provide a wrapper for an array response
+            |*/
+            |$annotations
+            |fun $originalClass.$funName($typedParams): Task<${modelClass}Array> {
+            |   Log.d("$originalClass","$funName")
+            |   return Task.execute {
+            |       ${modelClass}Array($repositoryName.$funName($params).toTypedArray())
+            |   }
+            |}
+            |
+            |/**
+            |* Platform : iOS
+            |* Origin: [$originalClass.$funName]
+            |* Generated function to provide a wrapper for a list response
+            |*/
+            |$annotations
+            |fun $originalClass.$listFunName($typedParams): Task<${modelClass}List> {
+            |    Log.d("$originalClass","$funName")
+            |    return Task.execute {
+            |        ${modelClass}List($repositoryName.$funName($params))
             |    }
             |}
             """.trimMargin().toByteArray()

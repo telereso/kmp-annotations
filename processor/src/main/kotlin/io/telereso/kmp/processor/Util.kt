@@ -34,6 +34,7 @@ const val PREFIX_TASK_COMMON_FLOW = "Task<$CLASS_COMMON_FLOW<"
 const val PREFIX_COMMON_FLOW_LIST = "$CLASS_COMMON_FLOW<List<"
 const val PREFIX_COMMON_FLOW_ARRAY = "$CLASS_COMMON_FLOW<Array<"
 val REGEX_TASK = Regex("(?<=Task<)(.*?)(?=>)")
+val REGEX_TASK_LIST = Regex("(?<=Task<List<)(.*?)(?=>)")
 val REGEX_TASK_ARRAY = Regex("(?<=Task<Array<)(.*?)(?=>)")
 val REGEX_COMMON_FLOW = Regex("(?<=$CLASS_COMMON_FLOW<)(.*?)(?=>)")
 val REGEX_COMMON_FLOW_LIST = Regex("(?<=$PREFIX_COMMON_FLOW_LIST)(.*?)(?=>>)")
@@ -152,6 +153,10 @@ private fun resolveJsType(type: String?, isNullable: Boolean, hasDefault: Boolea
 
 fun KSFunctionDeclaration.getCommonFlowListClass(): String? {
     return REGEX_COMMON_FLOW_LIST.find(returnType?.resolve().toString())?.value
+}
+
+fun KSFunctionDeclaration.getTaskListClass(): String? {
+    return REGEX_TASK_LIST.find(returnType?.resolve().toString())?.value
 }
 
 fun KSFunctionDeclaration.getCommonFlowArrayClass(): String? {
