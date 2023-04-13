@@ -177,6 +177,7 @@ class ListWrapperVisitor(
             |import io.telereso.kmp.core.Task
             |import io.telereso.kmp.core.Log
             |import io.telereso.kmp.core.asCommonFlow
+            |import kotlin.js.JsExport
             |import kotlinx.coroutines.flow.map
             |
             |import $modelPackageString.$modelClass.*
@@ -190,6 +191,7 @@ class ListWrapperVisitor(
             |* Generated function to provide a wrapper for an array response
             |*/
             |$annotations
+            |@JsExport
             |fun $originalClass.$arrayFunName($typedParams): Task<CommonFlow<${modelClass}Array>> {
             |   Log.d("$originalClass","$arrayFunName")
             |   return Task.execute {
@@ -232,8 +234,9 @@ class ListWrapperVisitor(
         )
 
         val funName = function.simpleName.asString()
-        val listFunName = "${funName}List"
-        val arrayFunName = "${funName}Array"
+        val listWrapperFunName = function.getTaskListWrapperName()
+        val arrayWrapperFunName = function.getTaskArrayWrapperName()
+        val arrayFunName = function.getTaskArrayName()
 
         val typedParams = function.getTypedParametersAndroid(enums, true)
         val params = function.getParametersAndroid(enums, true)
@@ -257,6 +260,7 @@ class ListWrapperVisitor(
             |import $modelPackageString.$modelClass.*
             |import $modelPackageString.${modelClass}List
             |import $modelPackageString.${modelClass}Array
+            |import kotlin.js.JsExport
             |$annotationsImports
             |
             |/**
@@ -265,6 +269,7 @@ class ListWrapperVisitor(
             |* Generated function to provide an array equivalent of the list response 
             |*/
             |$annotations
+            |@JsExport
             |fun $originalClass.$arrayFunName($typedParams): Task<Array<${modelClass}>> {
             |   Log.d("$originalClass","$funName")
             |   return Task.execute {
@@ -278,7 +283,8 @@ class ListWrapperVisitor(
             |* Generated function to provide a wrapper for an array response
             |*/
             |$annotations
-            |fun $originalClass.$funName($typedParams): Task<${modelClass}Array> {
+            |@JsExport
+            |fun $originalClass.$arrayWrapperFunName($typedParams): Task<${modelClass}Array> {
             |   Log.d("$originalClass","$funName")
             |   return Task.execute {
             |       ${modelClass}Array($repositoryName.$funName($params).toTypedArray())
@@ -291,7 +297,7 @@ class ListWrapperVisitor(
             |* Generated function to provide a wrapper for a list response
             |*/
             |$annotations
-            |fun $originalClass.$listFunName($typedParams): Task<${modelClass}List> {
+            |fun $originalClass.$listWrapperFunName($typedParams): Task<${modelClass}List> {
             |    Log.d("$originalClass","$funName")
             |    return Task.execute {
             |        ${modelClass}List($repositoryName.$funName($params))

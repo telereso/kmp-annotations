@@ -164,11 +164,23 @@ fun KSFunctionDeclaration.getCommonFlowArrayClass(): String? {
 }
 
 fun KSFunctionDeclaration.getListFlowName(): String {
-    return simpleName.asString().removeSuffix("Flow").plus("ListFlow")
+    return simpleName.asString().removeSuffix("Flow").removeSuffix("s").plus("ListFlow")
 }
 
 fun KSFunctionDeclaration.getArrayFlowName(): String {
-    return simpleName.asString().removeSuffix("Flow").plus("ArrayFlow")
+    return simpleName.asString().removeSuffix("Flow").removeSuffix("s").plus("ArrayFlow")
+}
+
+fun KSFunctionDeclaration.getTaskListWrapperName(): String {
+    return simpleName.asString().removeSuffix("s").plus("List")
+}
+
+fun KSFunctionDeclaration.getTaskArrayWrapperName(): String {
+    return simpleName.asString().removeSuffix("s").plus("Array")
+}
+
+fun KSFunctionDeclaration.getTaskArrayName(): String {
+    return simpleName.asString().plus("Array")
 }
 
 //private fun resolveJsType(type: String?, isNullable: Boolean, hasDefault: Boolean): String {
