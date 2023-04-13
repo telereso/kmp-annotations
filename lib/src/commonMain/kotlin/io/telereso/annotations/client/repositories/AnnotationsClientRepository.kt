@@ -19,10 +19,17 @@ internal class AnnotationsClientRepository(
     }
 
     @Throws(Exception::class)
-    suspend fun getLaunchRockets(
+    suspend fun fetchLaunchRockets(
         forceReload: Boolean = false
     ): List<RocketLaunch> {
         return getLaunchRockets(forceReload, null)
+    }
+
+    suspend fun fetchLaunchRocketsByType(
+        type: RocketLaunch.Type? = null,
+        forceReload: Boolean = false,
+    ): List<RocketLaunch> {
+        return getLaunchRockets(forceReload, type)
     }
 
     @Throws(Exception::class)

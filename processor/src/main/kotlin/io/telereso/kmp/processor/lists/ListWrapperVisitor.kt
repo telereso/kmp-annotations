@@ -88,7 +88,7 @@ class ListWrapperVisitor(
                     createCommonFlowFunctionsWrapper(packageString, c, function, enums)
                 }
                 if (!isCommonFlow)
-                    function.getTaskListClass()?.let { c ->
+                    function.getTaskArrayClass()?.let { c ->
                         createTaskFunctionsWrapper(packageString, c, function, enums)
                     }
             }
@@ -236,7 +236,7 @@ class ListWrapperVisitor(
         val funName = function.simpleName.asString()
         val listWrapperFunName = function.getTaskListWrapperName()
         val arrayWrapperFunName = function.getTaskArrayWrapperName()
-        val arrayFunName = function.getTaskArrayName()
+//        val arrayFunName = function.getTaskArrayName()
 
         val typedParams = function.getTypedParametersAndroid(enums, true)
         val params = function.getParametersAndroid(enums, true)
@@ -262,20 +262,6 @@ class ListWrapperVisitor(
             |import $modelPackageString.${modelClass}Array
             |import kotlin.js.JsExport
             |$annotationsImports
-            |
-            |/**
-            |* Platform : JS
-            |* Origin: [$originalClass.$funName]
-            |* Generated function to provide an array equivalent of the list response 
-            |*/
-            |$annotations
-            |@JsExport
-            |fun $originalClass.$arrayFunName($typedParams): Task<Array<${modelClass}>> {
-            |   Log.d("$originalClass","$funName")
-            |   return Task.execute {
-            |       $repositoryName.$funName($params).toTypedArray()
-            |   }
-            |}
             |
             |/**
             |* Platform : iOS, JS

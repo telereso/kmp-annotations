@@ -39,14 +39,13 @@ extension ContentView {
         }
 
         func loadRockets() {
-            annotationsClientManager.fetchLaunchRockets(forceReload: true)
+            annotationsClientManager.fetchLaunchRocketsList(forceReload: true)
 //                .onSuccess  { result in
 //                    guard let rocketsResult = result else { return }
-//                    print("Total Rockect Missions:, \(rocketsResult.size)!")
-//                    print("First Rockect Mission:, \(rocketsResult.get(index: 0)?.mission_name ?? "")!")
+//                    print("Total Rocket Missions:, \(rocketsResult.list.count)!")
 //                }.onSuccessUI  { [self] result in
 //                    guard let rocketsResult = result else { return }
-//                    rocketsLaunched = rocketsResult
+//                    rocketsLaunched = rocketsResult.list
 //                }
 
             annotationsClientManager.getRocketLaunchesListFlow(param: "").onSuccessUI { (flow: CommonFlow<RocketLaunchList>?) in

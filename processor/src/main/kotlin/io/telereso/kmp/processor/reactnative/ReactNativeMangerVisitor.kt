@@ -616,6 +616,11 @@ private fun KSFunctionDeclaration.getResultJs(): Pair<String, String?> {
             val klass = REGEX_TASK_ARRAY.find(type)?.value?.jsType()?.removePrefix("typeof ")
             "${klass}FromJsonArray(${klass}.Companion, data)" to klass
         }
+        type.startsWith(PREFIX_TASK_LIST) -> {
+            var klass = REGEX_TASK_LIST.find(type)?.value?.jsType()?.removePrefix("typeof ")
+            klass = "${klass}Array"
+            "${klass}FromJson(${klass}.Companion, data)" to klass
+        }
         type.startsWith(PREFIX_TASK) -> {
             var klass = REGEX_TASK.find(type)?.value?.jsTypeClass()
             val commonFlowClass = REGEX_COMMON_FLOW.find(type)?.value
@@ -859,7 +864,7 @@ private fun KSFunctionDeclaration.getMethodBodyJs(
 //        }
 //        addAll(params.second)
 //    }
-    val funName = simpleName.asString()
+    var funName = simpleName.asString()
 
     return when {
         type == null -> Triple("void", emptyList(), emptySet())
@@ -939,6 +944,9 @@ private fun KSFunctionDeclaration.getMethodBodyJs(
             )
         }
         else -> {
+            if(type.startsWith(PREFIX_TASK_LIST))
+                funName = "${funName}Array"
+
             val dataString = when (type) {
                 "Unit", "Task<Unit>" -> ""
                 "Boolean", "Task<Boolean>" -> "data: boolean"

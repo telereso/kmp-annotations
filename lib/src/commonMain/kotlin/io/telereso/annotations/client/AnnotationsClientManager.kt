@@ -141,7 +141,7 @@ class AnnotationsClientManager private constructor(
      */
     fun fetchLaunchRockets(forceReload: Boolean): Task<Array<RocketLaunch>> {
         return Task.execute {
-            repo.getLaunchRockets(forceReload).toTypedArray()
+            repo.fetchLaunchRockets(forceReload).toTypedArray()
         }
     }
 
