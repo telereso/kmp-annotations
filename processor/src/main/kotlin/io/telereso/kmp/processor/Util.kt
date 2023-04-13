@@ -29,6 +29,7 @@ import com.google.devtools.ksp.symbol.*
 
 const val CLASS_COMMON_FLOW = "CommonFlow"
 const val PREFIX_TASK = "Task<"
+const val PREFIX_TASK_LIST = "Task<List<"
 const val PREFIX_TASK_ARRAY = "Task<Array<"
 const val PREFIX_TASK_COMMON_FLOW = "Task<$CLASS_COMMON_FLOW<"
 const val PREFIX_COMMON_FLOW_LIST = "$CLASS_COMMON_FLOW<List<"
@@ -159,6 +160,10 @@ fun KSFunctionDeclaration.getTaskListClass(): String? {
     return REGEX_TASK_LIST.find(returnType?.resolve().toString())?.value
 }
 
+fun KSFunctionDeclaration.getTaskArrayClass(): String? {
+    return REGEX_TASK_ARRAY.find(returnType?.resolve().toString())?.value
+}
+
 fun KSFunctionDeclaration.getCommonFlowArrayClass(): String? {
     return REGEX_COMMON_FLOW_ARRAY.find(returnType?.resolve().toString())?.value
 }
@@ -170,6 +175,18 @@ fun KSFunctionDeclaration.getListFlowName(): String {
 fun KSFunctionDeclaration.getArrayFlowName(): String {
     return simpleName.asString().removeSuffix("Flow").plus("ArrayFlow")
 }
+
+fun KSFunctionDeclaration.getTaskListWrapperName(): String {
+    return simpleName.asString().plus("List")
+}
+
+fun KSFunctionDeclaration.getTaskArrayWrapperName(): String {
+    return simpleName.asString().plus("Array")
+}
+
+//fun KSFunctionDeclaration.getTaskArrayName(): String {
+//    return simpleName.asString().plus("Array")
+//}
 
 //private fun resolveJsType(type: String?, isNullable: Boolean, hasDefault: Boolean): String {
 //    return when (type) {
