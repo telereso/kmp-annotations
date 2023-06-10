@@ -215,10 +215,6 @@ class ReactNativeMangerVisitor(
             |extension String: Error {
             |}
             |
-            |public class ${className}Instance {
-            |   public static var shared : ${className}Manager? = nil
-            |}
-            |
             |
             |@objc($className)
             |class $className: RCTEventEmitter {
@@ -743,11 +739,12 @@ private fun KSFunctionDeclaration.getMethodBodyIos(
 
             Triple(
                 """
-            |if (${className}Instance.shared == nil) {
+            |let manager = ${className}Manager.Companion().getInstanceOrNull()
+            |if (manager == nil) {
             |            reject("$funName error", "${className}Manager was not initialized", "${className}Manager was not initialized")
             |        } else {
             |            ${paramsRes.second}
-            |            ${className}Instance.shared!.${funName}(${paramsRes.first}).watch { (result: ${res.second}?, error: ClientException?) in
+            |            manager!.${funName}(${paramsRes.first}).watch { (result: ${res.second}?, error: ClientException?) in
             |                        if(error != nil){
             |                           return reject("${simpleName.asString()} error", "${simpleName.asString()} error", error?.message ?? "empty message")
             |                        }
@@ -769,12 +766,13 @@ private fun KSFunctionDeclaration.getMethodBodyIos(
             }
             Triple(
                 """
-            |if (${className}Instance.shared == nil) {
+            |let manager = ${className}Manager.Companion().getInstanceOrNull()
+            |if (manager == nil) {
             |            reject("$funName error", "${className}Manager was not initialized", "${className}Manager was not initialized")
             |        } else {
             |            ${paramsRes.second}
             |            
-            |            ${className}Instance.shared!.${funNameList ?: funName}(${paramsRes.first}).onSuccess { streamResult in
+            |            manager!.${funNameList ?: funName}(${paramsRes.first}).onSuccess { streamResult in
             |                        guard let stream = streamResult else {
             |                            return
             |                        }
@@ -801,11 +799,12 @@ private fun KSFunctionDeclaration.getMethodBodyIos(
             val res = getResultIos()
             Triple(
                 """
-            |if (${className}Instance.shared == nil) {
+            |let manager = ${className}Manager.Companion().getInstanceOrNull()
+            |if (manager == nil) {
             |            reject("${simpleName.asString()} error", "${className}Manager was not initialized", "${className}Manager was not initialized")
             |        } else {
             |            ${paramsRes.second}
-            |            ${className}Instance.shared!.${simpleName.asString()}(${paramsRes.first})
+            |            manager!.${simpleName.asString()}(${paramsRes.first})
             |                    .onSuccess { result in
             |                        guard let res = result else {
             |                            return
@@ -822,11 +821,12 @@ private fun KSFunctionDeclaration.getMethodBodyIos(
         else -> {
             Triple(
                 """
-            |if (${className}Instance.shared == nil) {
+            |let manager = ${className}Manager.Companion().getInstanceOrNull()
+            |if (manager == nil) {
             |            reject("${simpleName.asString()} error", "${className}Manager was not initialized", "${className}Manager was not initialized")
             |        } else {
             |            ${paramsRes.second}
-            |            resolve(${className}Instance.shared!.${simpleName.asString()}(${paramsRes.first}))
+            |            resolve(manager!.${simpleName.asString()}(${paramsRes.first}))
             |        }
             """.trimMargin(), null, emptyList()
             )
