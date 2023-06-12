@@ -256,6 +256,7 @@ class ListWrapperVisitor(
             |import io.telereso.kmp.core.Task
             |import io.telereso.kmp.core.Log
             |
+            |import $modelPackageString.*
             |import $modelPackageString.$modelClass
             |import $modelPackageString.$modelClass.*
             |import $modelPackageString.${modelClass}List
