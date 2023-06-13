@@ -5,10 +5,10 @@ plugins {
     id("com.android.application").version("7.3.1").apply(false)
     id("com.android.library").version("7.3.1").apply(false)
 
-    id("org.jetbrains.kotlin.android").version("1.7.21").apply(false)
-    id("org.jetbrains.kotlin.plugin.parcelize").version("1.7.21").apply(false)
-    kotlin("multiplatform").version("1.7.21").apply(false)
-    id("org.jetbrains.kotlin.native.cocoapods").version("1.7.22").apply(false)
+    id("org.jetbrains.kotlin.android").version("1.8.21").apply(false)
+    id("org.jetbrains.kotlin.plugin.parcelize").version("1.8.21").apply(false)
+    kotlin("multiplatform").version("1.8.21").apply(false)
+    id("org.jetbrains.kotlin.native.cocoapods").version("1.8.21").apply(false)
 
     id("com.squareup.sqldelight").version("1.5.3").apply(false)
 }
@@ -62,7 +62,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.22")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.21")
         classpath("com.android.tools.build:gradle:7.0.3")
         classpath("org.jetbrains.kotlin:kotlin-serialization:1.4.21")
         classpath("com.squareup.sqldelight:gradle-plugin:1.5.4")
