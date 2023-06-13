@@ -59,6 +59,6 @@ sourceSets.main {
 
 dependencies {
   implementation(project(":annotations"))
-  implementation("com.google.devtools.ksp:symbol-processing-api:1.7.22-1.0.8")
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.3")
+  implementation("com.google.devtools.ksp:symbol-processing-api:1.8.21-1.0.11")
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
 }

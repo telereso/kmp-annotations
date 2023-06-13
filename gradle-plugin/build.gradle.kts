@@ -3,7 +3,7 @@ import java.util.*
 plugins {
     `kotlin-dsl` // Is needed to turn our build logic written in Kotlin into Gralde Plugin
     `java-gradle-plugin`
-    id("com.google.devtools.ksp") version "1.7.22-1.0.8"
+    id("com.google.devtools.ksp") version "1.8.21-1.0.11"
     id("com.gradle.plugin-publish") version "1.0.0"
     signing
 }
@@ -67,5 +67,5 @@ publishing {
 
 
 dependencies {
-    implementation("com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:1.7.22-1.0.8")
+    implementation("com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:1.8.21-1.0.11")
 }
