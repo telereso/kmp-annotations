@@ -29,10 +29,10 @@ val targetSdkVersion by extra { 31 }
 
 // Dependencies versions
 val ktorVersion by extra { "2.1.3" }
-val sqlDelightVersion by extra { "1.5.4" }
-val coroutinesVersion by extra { "1.6.4" }
+val sqlDelightVersion by extra { "1.5.5" }
+val coroutinesVersion by extra { "1.7.1" }
 val kotlinxDatetimeVersion by extra { "0.4.0" }
-val coreVersion by extra { "0.0.17" }
+val coreVersion by extra { "0.0.28" }
 
 
 allprojects {
@@ -63,10 +63,10 @@ buildscript {
     }
     dependencies {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.21")
-        classpath("com.android.tools.build:gradle:7.0.3")
-        classpath("org.jetbrains.kotlin:kotlin-serialization:1.4.21")
-        classpath("com.squareup.sqldelight:gradle-plugin:1.5.4")
-        classpath("org.jetbrains.dokka:dokka-gradle-plugin:1.7.20")
+        classpath("com.android.tools.build:gradle:7.0.4")
+        classpath("org.jetbrains.kotlin:kotlin-serialization:1.8.21")
+        classpath("com.squareup.sqldelight:gradle-plugin:1.5.5")
+        classpath("org.jetbrains.dokka:dokka-gradle-plugin:1.8.20")
         classpath("org.jfrog.buildinfo:build-info-extractor-gradle:latest.release")
         classpath("com.codingfeline.buildkonfig:buildkonfig-gradle-plugin:0.13.3")
     }

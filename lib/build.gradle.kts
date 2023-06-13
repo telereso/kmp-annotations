@@ -345,7 +345,7 @@ kotlin {
                 implementation("com.squareup.sqldelight:sqljs-driver:$sqlDelightVersion")
 
 //                implementation(devNpm("copy-webpack-plugin", "9.1.0"))
-                implementation(npm("sql.js", "1.7.0"))
+                implementation(npm("sql.js", "1.8.0"))
                 implementation(npm("@js-joda/core", "3.2.0"))
             }
         }

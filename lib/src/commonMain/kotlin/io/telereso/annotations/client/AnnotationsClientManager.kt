@@ -125,7 +125,7 @@ class AnnotationsClientManager private constructor(
         instance = this
         // init database for js as soon as the manger is created , due to sql.wasm loading requirements
         when (getPlatform().type) {
-            Platform.TYPE.BROWSER -> {
+            Platform.Type.BROWSER -> {
                 ContextScope.get(Dispatchers.Default).launch {
                     repo.initDatabase()
                 }
