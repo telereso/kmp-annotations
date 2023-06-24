@@ -32,6 +32,7 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.*
 import io.telereso.kmp.processor.camelToSnakeCase
+import io.telereso.kmp.processor.getImportPackages
 import java.io.OutputStream
 
 
@@ -140,23 +141,6 @@ class BuilderVisitor(
 
     }
 
-}
-
-private fun KSType.getImportPackages(): Set<String> {
-    val set = hashSetOf<String>()
-    if (innerArguments.isEmpty()) return set
-    if (declaration.closestClassDeclaration()?.classKind == ClassKind.ENUM_CLASS) return set
-
-    innerArguments.forEach {
-        val type = it.type?.resolve() ?: return@forEach
-        if (type.declaration.closestClassDeclaration()?.classKind == ClassKind.ENUM_CLASS) return@forEach
-        set.addAll(type.getImportPackages())
-        val pk = type.declaration.packageName.asString()
-        if (!pk.startsWith("kotlin"))
-            set.add(type.declaration.packageName.asString() + "." + type.declaration.simpleName.asString())
-    }
-
-    return set
 }
 
 

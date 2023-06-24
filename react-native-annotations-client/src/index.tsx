@@ -64,6 +64,45 @@ export function fetchLaunchRocketsByType(type: typeof RocketLaunch.Type): Promis
 }
 
 
+export function testEmpty(): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    AnnotationsClient.testEmpty()
+      .then(() => {
+        resolve();
+      })
+      .catch((e: any) => {
+        reject(e);
+      });
+})      
+}
+
+
+export function testOne(test: String = ''): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    AnnotationsClient.testOne(test)
+      .then(() => {
+        resolve();
+      })
+      .catch((e: any) => {
+        reject(e);
+      });
+})      
+}
+
+
+export function testDefaultParams(id: number,name: string,param: String = '',param2: String = '',param3: String = ''): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    AnnotationsClient.testDefaultParams(id, name, param, param2, param3)
+      .then(() => {
+        resolve();
+      })
+      .catch((e: any) => {
+        reject(e);
+      });
+})      
+}
+
+
 export function testDefaultParam(param: String = ''): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     AnnotationsClient.testDefaultParam(param)

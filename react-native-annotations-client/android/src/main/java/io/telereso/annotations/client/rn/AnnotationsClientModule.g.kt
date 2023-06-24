@@ -39,6 +39,36 @@ class AnnotationsClientModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
+  fun testEmpty(promise: Promise) {
+       try {
+          promise.resolve(manager.testEmpty()) 
+       } catch (e:Exception){
+          promise.reject(e)
+       }
+
+  }
+
+  @ReactMethod
+  fun testOne(test: String? = null, promise: Promise) {
+       try {
+          promise.resolve(manager.testOne(test)) 
+       } catch (e:Exception){
+          promise.reject(e)
+       }
+
+  }
+
+  @ReactMethod
+  fun testDefaultParams(id: Int, name: String, param: String = "", param2: String?, param3: String? = null, promise: Promise) {
+       try {
+          promise.resolve(manager.testDefaultParams(id, name, param, param2, param3)) 
+       } catch (e:Exception){
+          promise.reject(e)
+       }
+
+  }
+
+  @ReactMethod
   fun testDefaultParam(param: String = "", promise: Promise) {
        try {
           promise.resolve(manager.testDefaultParam(param)) 

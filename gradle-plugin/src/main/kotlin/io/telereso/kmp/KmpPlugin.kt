@@ -76,7 +76,16 @@ class KmpPlugin : Plugin<Project> {
         val teleresoKmp = teleresoKmp()
 
         afterEvaluate {
+            kspExtension.arg(
+                "swiftOverloadsByJvmOverloads",
+                teleresoKmp.swiftOverloadsByJvmOverloads.toString()
+            )
+            kspExtension.arg("createObjectFunctionName", teleresoKmp.createObjectFunctionName)
+
+
+
             // Common tasks
+
 
             val jsCleanLibraryDistributionTask = "jsCleanLibraryDistribution"
             tasks.create<Delete>(jsCleanLibraryDistributionTask) {

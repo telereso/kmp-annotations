@@ -46,6 +46,26 @@ open class TeleresoKmpExtension @Inject constructor(
      * set to true to stop copying generated flutter files into flutter dir
      */
     var disableFlutterExport: Boolean = false
+    /**
+     * set to true to start using [JvmOverloads] as a SwiftOverloads annotation , to avoid updating all models in old project
+     */
+    var swiftOverloadsByJvmOverloads: Boolean = false
+    /**
+     * in case of naming conflict or project's conventional naming you can change the name of function factory that create the object,
+     * By default it s as following
+     *
+     * ```
+     * User.companion().object("123")
+     * ```
+     * if changed to "instance" , it will be
+     *
+     * ```
+     * User.companion().instance("123")
+     * ```
+     *
+     */
+    var createObjectFunctionName: String = "`object`"
+
 
     companion object {
         fun Project.teleresoKmp(): TeleresoKmpExtension {

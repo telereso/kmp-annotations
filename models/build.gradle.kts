@@ -147,7 +147,7 @@ android {
 
 tasks.dokkaHtml.configure {
     // Set module name displayed in the final output
-    moduleName.set("${project.name}")
+    moduleName.set(project.name)
     outputDirectory.set(
         rootDir.resolve(
             "public${
@@ -155,4 +155,9 @@ tasks.dokkaHtml.configure {
             }/models"
         )
     )
+}
+
+teleresoKmp {
+    swiftOverloadsByJvmOverloads = true
+    createObjectFunctionName = "instance"
 }

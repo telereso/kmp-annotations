@@ -38,15 +38,17 @@ import android.os.Parcelable
 import io.telereso.kmp.annotations.Builder
 import io.telereso.kmp.annotations.FlutterExport
 import io.telereso.kmp.annotations.SkipJsonConverters
+import io.telereso.kmp.annotations.SwiftOverloads
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 
 
-@FlutterExport
+//@FlutterExport
 @Parcelize
 @Builder
 @Serializable
 @SkipJsonConverters
+@SwiftOverloads
 data class Pokemon(
     val id: Int,
     var name: String,

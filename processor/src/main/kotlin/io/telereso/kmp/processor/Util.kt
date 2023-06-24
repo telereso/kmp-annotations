@@ -25,6 +25,7 @@
 package io.telereso.kmp.processor
 
 import com.google.devtools.ksp.closestClassDeclaration
+import com.google.devtools.ksp.innerArguments
 import com.google.devtools.ksp.symbol.*
 
 const val CLASS_COMMON_FLOW = "CommonFlow"
@@ -198,3 +199,20 @@ fun KSFunctionDeclaration.getTaskArrayWrapperName(): String {
 //        else -> "typeof $type"
 //    }
 //}
+
+fun KSType.getImportPackages(): Set<String> {
+    val set = hashSetOf<String>()
+    if (innerArguments.isEmpty()) return set
+    if (declaration.closestClassDeclaration()?.classKind == ClassKind.ENUM_CLASS) return set
+
+    innerArguments.forEach {
+        val type = it.type?.resolve() ?: return@forEach
+        if (type.declaration.closestClassDeclaration()?.classKind == ClassKind.ENUM_CLASS) return@forEach
+        set.addAll(type.getImportPackages())
+        val pk = type.declaration.packageName.asString()
+        if (!pk.startsWith("kotlin"))
+            set.add(type.declaration.packageName.asString() + "." + type.declaration.simpleName.asString())
+    }
+
+    return set
+}
