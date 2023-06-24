@@ -15,6 +15,8 @@ import io.telereso.kmp.annotations.ListWrappers
 import io.telereso.kmp.annotations.ReactNativeExport
 import io.telereso.kmp.annotations.SkipListWrappers
 import io.telereso.kmp.annotations.SkipReactNativeExport
+import io.telereso.kmp.annotations.SwiftOverloads
+import io.telereso.kmp.core.Log.logDebug
 import io.telereso.kmp.core.models.ClientException
 import io.telereso.kmp.core.models.ErrorBody
 import io.telereso.kmp.core.models.fromJson
@@ -149,6 +151,28 @@ class AnnotationsClientManager private constructor(
         return Task.execute {
             repo.getLaunchRockets(true, type).toTypedArray()
         }
+    }
+
+
+    @SwiftOverloads
+    fun testEmpty() {
+
+    }
+
+    @SwiftOverloads
+    fun testOne(test: String? = null) {
+
+    }
+
+    @SwiftOverloads
+    fun testDefaultParams(
+        id: Int,
+        name: String,
+        param: String = "",
+        param2: String?,
+        param3: String? = null
+    ) {
+        logDebug("$id $name $param $param2 $param3")
     }
 
     fun testDefaultParam(param: String = "") {

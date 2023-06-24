@@ -31,6 +31,7 @@ import io.telereso.kmp.annotations.Builder
 import io.telereso.kmp.annotations.FlutterExport
 import io.telereso.kmp.annotations.ListWrappers
 import io.telereso.kmp.annotations.ReactNativeExport
+import io.telereso.kmp.annotations.SwiftOverloads
 import io.telereso.kmp.processor.builder.BuilderSymbolValidator
 import io.telereso.kmp.processor.builder.BuilderVisitor
 import io.telereso.kmp.processor.flutter.FlutterModelSymbolValidator
@@ -41,11 +42,14 @@ import io.telereso.kmp.processor.model.ModelSymbolValidator
 import io.telereso.kmp.processor.model.ModelVisitor
 import io.telereso.kmp.processor.reactnative.ReactNativeMangerVisitor
 import io.telereso.kmp.processor.reactnative.ReactNativeSymbolValidator
+import io.telereso.kmp.processor.swift.SwiftSymbolValidator
+import io.telereso.kmp.processor.swift.SwiftVisitor
 
 class KMProcessorProvider : SymbolProcessorProvider {
 
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
         return KMPModelProcessor(
+            environment,
             logger = environment.logger,
             codeGenerator = environment.codeGenerator,
             scope = environment.options["scope"],
@@ -55,6 +59,7 @@ class KMProcessorProvider : SymbolProcessorProvider {
 }
 
 class KMPModelProcessor(
+    private val environment: SymbolProcessorEnvironment,
     private val logger: KSPLogger,
     private val codeGenerator: CodeGenerator,
     private val scope: String? = null,
@@ -65,6 +70,7 @@ class KMPModelProcessor(
     private val reactNativeValidator = ReactNativeSymbolValidator(logger)
     private val builderValidator = BuilderSymbolValidator(logger)
     private val listWrapperValidator = ListWrappersSymbolValidator(logger)
+    private val swiftSymbolValidator = SwiftSymbolValidator(logger)
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         logger.info("KMPModelProcessor was invoked.")
@@ -73,7 +79,9 @@ class KMPModelProcessor(
                 processFlutter(resolver, packageName) +
                 processReactNative(resolver, scope, packageName) +
                 processBuilder(resolver, packageName) +
-                processListWrappers(resolver, packageName)
+                processListWrappers(resolver, packageName) +
+                processSwiftOverLoad(environment, resolver,SwiftOverloads::class.qualifiedName, packageName) +
+                processSwiftOverLoad(environment, resolver,JvmOverloads::class.qualifiedName, packageName)
     }
 
     private fun processModel(resolver: Resolver, packageName: String?): List<KSAnnotated> {
@@ -161,6 +169,7 @@ class KMPModelProcessor(
 
             validatedSymbols.filter {
                 builderValidator.isValid(it)
+                true
             }.forEach {
                 it.accept(visitor, Unit)
             }
@@ -188,6 +197,36 @@ class KMPModelProcessor(
 
             validatedSymbols.filter {
                 listWrapperValidator.isValid(it)
+            }.forEach {
+                it.accept(visitor, Unit)
+            }
+            unresolvedSymbols = resolved - validatedSymbols.toSet()     //4
+        }
+        return unresolvedSymbols
+    }
+
+    private fun processSwiftOverLoad(
+        environment: SymbolProcessorEnvironment,
+        resolver: Resolver,
+        annotationName:String?,
+        packageName: String?
+    ): List<KSAnnotated> {
+        var unresolvedSymbols: List<KSAnnotated> = emptyList()
+        if (annotationName == JvmOverloads::class.qualifiedName
+            && !environment.options["swiftOverloadsByJvmOverloads"].toBoolean()
+        ) return unresolvedSymbols
+
+        if (annotationName != null) {
+            val resolved = resolver.getSymbolsWithAnnotation(annotationName).toList()     // 1
+            val validatedSymbols = resolved.filter {
+                it.validate()
+            }.toList()     // 2
+            val dependencies = Dependencies(false, *resolver.getAllFiles().toList().toTypedArray())
+            val visitor =
+                SwiftVisitor(environment,codeGenerator, dependencies, packageName)
+
+            validatedSymbols.filter {
+                swiftSymbolValidator.isValid(it)
             }.forEach {
                 it.accept(visitor, Unit)
             }

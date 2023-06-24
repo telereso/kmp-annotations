@@ -35,20 +35,23 @@
 package com.yourcompany.fragmentfactory.data
 
 import com.yourcompany.fragmentfactory.data.model.Pokemon
+import io.telereso.kmp.annotations.SwiftOverloads
 
 class DataProvider {
 
-  fun getRandomPokemon() = pokemons[pokemons.indices.random()]
+    @SwiftOverloads
+    fun getRandomPokemon(test: String? = null, test1: String? = null) =
+        pokemons[pokemons.indices.random()]
 
-  private val pokemons = listOf(
-      Pokemon(
-          id = 1,
-          name = "Bulbasaur",
-          image = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png",
-          type = "Grass/Poison"
-      ),
-      Pokemon(
-          id = 2,
+    private val pokemons = listOf(
+        Pokemon(
+            id = 1,
+            name = "Bulbasaur",
+            image = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png",
+            type = "Grass/Poison"
+        ),
+        Pokemon(
+            id = 2,
           name = "Squirtle",
           image = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png",
           type = "Water"

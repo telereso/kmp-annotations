@@ -25,4 +25,8 @@ Run the following command
 ./gradlew :annotations-client:kspCommonMainKotlinMetadata --no-daemon -Dorg.gradle.debug=true -Pkotlin.compiler.execution.strategy=in-process
 ```
 
+```shell
+./gradlew :annotations-models:kspCommonMainKotlinMetadata --no-daemon -Dorg.gradle.debug=true -Pkotlin.compiler.execution.strategy=in-process
+```
+
 Then click debug `ksp`

@@ -1,10 +1,12 @@
 package io.telereso.annotations.models
 
 import io.telereso.kmp.annotations.ListWrappers
+import io.telereso.kmp.annotations.SwiftOverloads
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
+import kotlin.jvm.JvmOverloads
 
 /**
  * TODO Remove sample
@@ -15,7 +17,7 @@ import kotlin.js.JsExport
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 @ListWrappers
-data class RocketLaunch(
+data class RocketLaunch @SwiftOverloads constructor(
     /**
      * The @SerialName annotation allows you to redefine field names,
      * making it possible to declare properties in data classes with more readable names.
@@ -48,7 +50,7 @@ data class RocketLaunch(
 @Serializable
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-data class Rocket(
+data class Rocket @JvmOverloads constructor(
     @SerialName("rocket_id")
     val id: String? = null,
     @SerialName("rocket_name")
@@ -60,9 +62,23 @@ data class Rocket(
 @Serializable
 @OptIn(ExperimentalJsExport::class)
 @JsExport
+@SwiftOverloads
 data class Links(
     @SerialName("mission_patch")
     val missionPatchUrl: String?,
     @SerialName("article_link")
     val articleUrl: String?
+)
+
+@Serializable
+@OptIn(ExperimentalJsExport::class)
+@JsExport
+@SwiftOverloads
+data class TestModel constructor(
+    @SerialName("mission_patch")
+    val missionPatchUrl: String?,
+    @SerialName("article_link")
+    val articleUrl: String?,
+    val articleUrl2: String? = null,
+    val articleUrl3: String? = null
 )

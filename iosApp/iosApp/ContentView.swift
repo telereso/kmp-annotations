@@ -39,6 +39,11 @@ extension ContentView {
         }
 
         func loadRockets() {
+            RocketLaunch.companion.instance(flightNumber: 1)
+
+            annotationsClientManager.testDefaultParams(id: 1, name: "2", param2: nil, param: "")
+            annotationsClientManager.testDefaultParams(id: 2, name: "", param2: nil, param: "", param3: "3")
+
             annotationsClientManager.fetchLaunchRocketsList(forceReload: true)
 //                .onSuccess  { result in
 //                    guard let rocketsResult = result else { return }
