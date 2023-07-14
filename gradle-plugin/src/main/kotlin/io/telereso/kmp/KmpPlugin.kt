@@ -93,7 +93,7 @@ class KmpPlugin : Plugin<Project> {
                 delete(buildDir.resolve("productionLibrary"))
             }
 
-            tasks.named("compileKotlinJs").configure {
+            tasks.findByName("compileKotlinJs")?.apply {
                 dependsOn(jsCleanLibraryDistributionTask)
             }
 
