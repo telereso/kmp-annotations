@@ -1,7 +1,6 @@
 plugins {
-  kotlin("multiplatform")
-  id("com.android.library")
-  id("com.google.devtools.ksp")
+  alias(libs.plugins.kotlin.multiplatform)
+  alias(libs.plugins.android.library)
   id("maven-publish")
   id("convention.publication")
 }
@@ -11,7 +10,7 @@ version = rootProject.version
 
 kotlin {
   jvm()
-  android()
+  androidTarget()
   iosX64()
   iosArm64()
   iosSimulatorArm64()
@@ -32,7 +31,7 @@ kotlin {
     val commonMain by getting
     val commonTest by getting
     val androidMain by getting
-    val androidTest by getting
+    val androidUnitTest by getting
     val iosX64Main by getting
     val iosArm64Main by getting
     val iosSimulatorArm64Main by getting
@@ -61,12 +60,15 @@ kotlin {
 
 android {
   namespace = "io.telereso.kmp.annotations"
-  compileSdk = 32
+  compileSdk = libs.versions.compileSdk.get().toInt()
   buildFeatures {
     buildConfig = false
   }
   defaultConfig {
-    minSdk = 21
-    targetSdk = 32
+    minSdk = libs.versions.minSdk.get().toInt()
+  }
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
   }
 }
