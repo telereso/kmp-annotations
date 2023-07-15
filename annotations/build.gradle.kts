@@ -8,18 +8,26 @@ plugins {
 group = rootProject.group
 version = rootProject.version
 
+val disableJsTarget: String? by project
+
 kotlin {
   jvm()
   androidTarget()
+
   iosX64()
   iosArm64()
   iosSimulatorArm64()
 
-  js(IR) {
-    browser()
-    nodejs()
-    binaries.library()
-    binaries.executable()
+//  watchosArm32()
+//  watchosArm64()
+
+  if (!disableJsTarget.toBoolean()) {
+    js(IR) {
+      browser()
+      nodejs()
+      binaries.library()
+      binaries.executable()
+    }
   }
 
   sourceSets {
@@ -32,14 +40,22 @@ kotlin {
     val commonTest by getting
     val androidMain by getting
     val androidUnitTest by getting
+
     val iosX64Main by getting
     val iosArm64Main by getting
     val iosSimulatorArm64Main by getting
+
+//    val watchosArm32Main by getting
+//    val watchosArm64Main by getting
+
     val iosMain by creating {
       dependsOn(commonMain)
       iosX64Main.dependsOn(this)
       iosArm64Main.dependsOn(this)
       iosSimulatorArm64Main.dependsOn(this)
+
+//      watchosArm32Main.dependsOn(this)
+//      watchosArm64Main.dependsOn(this)
     }
     val iosX64Test by getting
     val iosArm64Test by getting
@@ -53,8 +69,11 @@ kotlin {
 
     val jvmMain by getting
     val jvmTest by getting
-    val jsMain by getting
-    val jsTest by getting
+
+    if (!disableJsTarget.toBoolean()) {
+      val jsMain by getting
+      val jsTest by getting
+    }
   }
 }
 

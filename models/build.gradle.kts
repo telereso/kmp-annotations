@@ -17,6 +17,7 @@ project.ext["artifactName"] = project.name
 group = "$groupId.${project.name}"
 version = project.findProperty("publishVersion") ?: "0.0.1"
 
+val disableJsTarget: String? by project
 
 kotlin {
     androidTarget {
@@ -26,50 +27,26 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
-    /**
-     * using jvm for Android targets inorder for the jvm jar file to be created.
-     * this is needed for the MavenLocal dependecny.
-     * only issue Android SDK specific implementaations wont work. This is still work in prgress.
-     */
     jvm {
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
         }
     }
 
+    if (!disableJsTarget.toBoolean()) {
+        js(IR) {
+            moduleName = project.name
 
-    js(IR) {
-        moduleName = project.name
-
-        compilations["main"].packageJson {
-            name = "@$scope/$moduleName"
-            version = project.version as String
-            customField("buildTimeStamp", "${System.currentTimeMillis()}")
+            compilations["main"].packageJson {
+                name = "@$scope/$moduleName"
+                version = project.version as String
+                customField("buildTimeStamp", "${System.currentTimeMillis()}")
+            }
+            browser()
+            nodejs()
+            binaries.library()
+            binaries.executable()
         }
-        /**
-         * browser()
-         * It sets the JavaScript target execution environment as browser.
-         * It provides a Gradle task—jsBrowserTest that runs all js tests inside the browser using karma and webpack.
-         */
-        browser()
-        /**
-         * nodejs()
-         * It sets the JavaScript target execution environment as nodejs.
-         * It provides a Gradle task—jsNodeTest that runs all js tests inside nodejs using the built-in test framework.
-         */
-        nodejs()
-        /**
-         * binaries.library()
-         * It tells the Kotlin compiler to produce Kotlin/JS code as a distributable node library.
-         * Depending on which target you've used along with this,
-         * you would get Gradle tasks to generate library distribution files
-         */
-        binaries.library()
-        /**
-         * binaries.executable()
-         * it tells the Kotlin compiler to produce Kotlin/JS code as webpack executable .js files.
-         */
-        binaries.executable()
     }
 
     sourceSets {
@@ -91,8 +68,10 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
+
         val androidMain by getting
         val androidUnitTest by getting
+
         val iosX64Main by getting
         val iosArm64Main by getting
         val iosSimulatorArm64Main by getting
@@ -114,8 +93,11 @@ kotlin {
 
         val jvmMain by getting
         val jvmTest by getting
-        val jsMain by getting
-        val jsTest by getting
+
+        if(!disableJsTarget.toBoolean()){
+            val jsMain by getting
+            val jsTest by getting
+        }
     }
 }
 

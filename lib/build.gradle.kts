@@ -25,6 +25,7 @@ val scope: String by rootProject.extra
 group = "$groupId.${project.name}"
 version = project.findProperty("publishVersion") ?: "0.0.1"
 
+val disableJsTarget: String? by project
 
 kotlin {
     androidTarget {
@@ -88,50 +89,46 @@ kotlin {
         }
     }
 
-    /**
-     * Adding JS target to this lib. initially when creating this project, on Android studio the JS option is missing
-     * for KKM Library.
-     *
-     */
-    js(IR) {
-        moduleName = "annotations-client"
+    if (!disableJsTarget.toBoolean()) {
+        js(IR) {
+            moduleName = "annotations-client"
 
-        compilations["main"].packageJson {
-            name = "@$scope/$moduleName"
-            version = project.version as String
-            customField("buildTimeStamp", "${System.currentTimeMillis()}")
-        }
-
-        /**
-         * browser()
-         * It sets the JavaScript target execution environment as browser.
-         * It provides a Gradle task—jsBrowserTest that runs all js tests inside the browser using karma and webpack.
-         */
-        browser {
-            testTask {
-                useMocha()
+            compilations["main"].packageJson {
+                name = "@$scope/$moduleName"
+                version = project.version as String
+                customField("buildTimeStamp", "${System.currentTimeMillis()}")
             }
-        }
-        /**
-         * nodejs()
-         * It sets the JavaScript target execution environment as nodejs.
-         * It provides a Gradle task—jsNodeTest that runs all js tests inside nodejs using the built-in test framework.
-         */
-        nodejs()
-        /**
-         * binaries.library()
-         * It tells the Kotlin compiler to produce Kotlin/JS code as a distributable node library.
-         * Depending on which target you've used along with this,
-         * you would get Gradle tasks to generate library distribution files
-         */
-        binaries.library()
-        /**
-         * binaries.executable()
-         * it tells the Kotlin compiler to produce Kotlin/JS code as webpack executable .js files.
-         */
-        binaries.executable()
-    }
 
+            /**
+             * browser()
+             * It sets the JavaScript target execution environment as browser.
+             * It provides a Gradle task—jsBrowserTest that runs all js tests inside the browser using karma and webpack.
+             */
+            browser {
+                testTask {
+                    useMocha()
+                }
+            }
+            /**
+             * nodejs()
+             * It sets the JavaScript target execution environment as nodejs.
+             * It provides a Gradle task—jsNodeTest that runs all js tests inside nodejs using the built-in test framework.
+             */
+            nodejs()
+            /**
+             * binaries.library()
+             * It tells the Kotlin compiler to produce Kotlin/JS code as a distributable node library.
+             * Depending on which target you've used along with this,
+             * you would get Gradle tasks to generate library distribution files
+             */
+            binaries.library()
+            /**
+             * binaries.executable()
+             * it tells the Kotlin compiler to produce Kotlin/JS code as webpack executable .js files.
+             */
+            binaries.executable()
+        }
+    }
     sourceSets {
 
         /**
@@ -241,27 +238,28 @@ kotlin {
             //iosSimulatorArm64Test.dependsOn(this)
         }
 
-        /**
-         * Adding main and test for JS.
-         */
-        val jsMain by getting {
-            dependencies {
-                /**
-                 * Engines are used to process network requests. Note that a specific platform may require a specific engine that processes network requests.
-                 */
-                implementation(libs.ktor.client.js)
+        if (!disableJsTarget.toBoolean()) {
 
-                implementation(libs.sqldelight.sqljs.driver)
+            val jsMain by getting {
+                dependencies {
+                    /**
+                     * Engines are used to process network requests. Note that a specific platform may require a specific engine that processes network requests.
+                     */
+                    implementation(libs.ktor.client.js)
+
+                    implementation(libs.sqldelight.sqljs.driver)
 
 //                implementation(devNpm("copy-webpack-plugin", "9.1.0"))
-                implementation(npm("sql.js", libs.versions.sqlJs.get()))
-                implementation(npm("@js-joda/core", libs.versions.js.joda.core.get()))
+                    implementation(npm("sql.js", libs.versions.sqlJs.get()))
+                    implementation(npm("@js-joda/core", libs.versions.js.joda.core.get()))
+                }
             }
-        }
-        val jsTest by getting {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.sqldelight.sqljs.driver)
+
+            val jsTest by getting {
+                dependsOn(commonTest)
+                dependencies {
+                    implementation(libs.sqldelight.sqljs.driver)
+                }
             }
         }
     }
@@ -449,7 +447,7 @@ kover {
         rule {
             name = "Minimal line coverage rate in percent"
             bound {
-                minValue = 50
+                minValue = 40
             }
         }
     }

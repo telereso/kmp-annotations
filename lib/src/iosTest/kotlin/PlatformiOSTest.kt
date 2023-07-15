@@ -21,6 +21,7 @@ import platform.posix.*
 
 
 
+@OptIn(ExperimentalForeignApi::class)
 actual class Resource actual constructor(actual val name: String) {
     private val file: CPointer<FILE>? = fopen("${TestUtils.RESOURCE_PATH}/$name", "r")
 
