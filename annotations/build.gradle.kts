@@ -9,8 +9,6 @@ plugins {
 group = rootProject.group
 version = rootProject.version
 
-val iosWatchEnabled: String? by project
-
 kotlin {
   jvm()
 
