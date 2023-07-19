@@ -20,6 +20,7 @@ kotlin {
 
   watchosArm32()
   watchosArm64()
+  watchosSimulatorArm64()
 
   js(IR) {
     browser()
@@ -59,11 +60,20 @@ kotlin {
     val iosX64Test by getting
     val iosArm64Test by getting
     val iosSimulatorArm64Test by getting
+
+    val watchosArm32Test by getting
+    val watchosArm64Test by getting
+    val watchosSimulatorArm64Test by getting
+
     val iosTest by creating {
       dependsOn(commonTest)
       iosX64Test.dependsOn(this)
       iosArm64Test.dependsOn(this)
       iosSimulatorArm64Test.dependsOn(this)
+
+      watchosArm32Test.dependsOn(this)
+      watchosArm64Test.dependsOn(this)
+      watchosSimulatorArm64Test.dependsOn(this)
     }
 
     val jvmMain by getting
