@@ -130,6 +130,7 @@ def reactNativeArchitectures() {
 }
 
 android {
+    namespace 'io.telereso.annotations.client.rn.app'
     ndkVersion rootProject.ext.ndkVersion
 
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -159,6 +160,10 @@ android {
                 }
             }
         }
+    }
+
+    buildFeatures {
+      buildConfig true
     }
 
     if (isNewArchitectureEnabled()) {
@@ -251,7 +256,10 @@ android {
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
 
-    implementation project(":annotations-client")
+    implementation(project(":annotations-client")){
+      exclude group:'io.telereso.kmp', module:'core-jvm'
+    }
+    implementation libs.telereso.core.android
 
     //noinspection GradleDynamicVersion
     implementation "com.facebook.react:react-native:+"  // From node_modules

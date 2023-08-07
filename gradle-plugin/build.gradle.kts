@@ -37,6 +37,12 @@ group = rootProject.group
 version = rootProject.version
 
 gradlePlugin {
+    description =
+        "Include tasks needed while working with Telereso's Kotlin multiplatform annotations also to support react native and flutter"
+//    website.set("https://telereso.io/")
+//    vcsUrl.set("https://github.com/telereso/kmp-annotations")
+//    tags = listOf("kotlin", "Kotlin Multiplatform", "kmm", "kmp", "Telereso", "ReactNative")
+
     plugins {
         create("kmp") {
             id = "io.telereso.kmp"
@@ -46,14 +52,6 @@ gradlePlugin {
             implementationClass = "io.telereso.kmp.KmpPlugin"
         }
     }
-}
-
-pluginBundle {
-    description =
-        "Include tasks needed while working with Telereso's Kotlin multiplatform annotations also to support react native and flutter"
-    website = "https://telereso.io/"
-    vcsUrl = "https://github.com/telereso/kmp-annotations"
-    tags = listOf("kotlin", "Kotlin Multiplatform", "kmm", "kmp", "Telereso", "ReactNative")
 }
 
 publishing {

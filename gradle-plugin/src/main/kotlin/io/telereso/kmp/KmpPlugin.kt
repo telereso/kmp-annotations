@@ -111,6 +111,12 @@ class KmpPlugin : Plugin<Project> {
                 "allTests"
             )
 
+            tasks.findByName("compileDebugKotlinAndroid")?.dependsOn("kspCommonMainKotlinMetadata")
+
+            tasks.findByName("jsNodeProductionLibraryPrepare")?.dependsOn("jsProductionExecutableCompileSync")
+            tasks.findByName("jsBrowserProductionLibraryPrepare")?.dependsOn("jsProductionExecutableCompileSync")
+            tasks.findByName("jsBrowserProductionWebpack")?.dependsOn("jsProductionLibraryCompileSync")
+
             // Models tasks
 
 //            val copyGeneratedModelsTask = "kspCommonMainKotlinMetadataCopyGeneratedModels"
@@ -210,7 +216,7 @@ class KmpPlugin : Plugin<Project> {
                 into("${baseDir}/react-native-${projectPackageName.replace(".", "-")}/src/")
             }
 
-            if (teleresoKmp.disableReactExport) {
+            if (!teleresoKmp.enableReactNativeExport) {
                 log("Skipping adding reactNative tasks")
             } else {
                 log("Adding reactNative tasks")
@@ -221,6 +227,12 @@ class KmpPlugin : Plugin<Project> {
 //                tasks.getByName(copyGeneratedFilesAndroidTask)
 //                    .finalizedBy(cleanAndroidGeneratedFiles)
 
+                val copyAndroidExampleGradle = "copyAndroidExampleGradle"
+                tasks.create<Copy>(copyAndroidExampleGradle) {
+                    from("${baseDir}/gradle/")
+                    into("${baseDir}/react-native-${projectPackageName.replace(".", "-")}/example/android/gradle/")
+                }
+
                 // iOS tasks
                 tasks.getByName(copyGeneratedFilesIosTask)
                     .dependsOn("kspCommonMainKotlinMetadata")
@@ -229,12 +241,15 @@ class KmpPlugin : Plugin<Project> {
                 tasks.getByName(copyGeneratedFilesJsTask)
                     .dependsOn("kspCommonMainKotlinMetadata")
 
+
                 dependsOnTasks.forEach {
                     tasks.findByName(it)?.dependsOn(cleanAndroidGeneratedFiles)
+                    tasks.findByName(it)?.dependsOn(copyAndroidExampleGradle)
                     tasks.findByName(it)?.dependsOn(copyGeneratedFilesAndroidTask)
                     tasks.findByName(it)?.dependsOn(copyGeneratedFilesIosTask)
                     tasks.findByName(it)?.dependsOn(copyGeneratedFilesJsTask)
                 }
+
             }
         }
     }

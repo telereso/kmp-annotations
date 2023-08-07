@@ -1,27 +1,18 @@
 plugins {
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
-    id("com.android.library")
-    id("org.jetbrains.dokka")
-    id("io.telereso.kmp").version("0.0.1-local")
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.telereso)
 }
 
 // Setup extras variables
 val groupId: String by rootProject.extra
 val scope: String by rootProject.extra
-val coreVersion:String by rootProject.extra
-val ktorVersion: String by rootProject.extra
-val sqlDelightVersion: String by rootProject.extra
-val coroutinesVersion: String by rootProject.extra
-val napierVersion: String by rootProject.extra
-val buildToolsVersion: String by rootProject.extra
-val minSdkVersion: Int by rootProject.extra
-val compileSdkVer: Int by rootProject.extra
-val targetSdkVersion: Int by rootProject.extra
 
 // Setup publish variables
 val baseProjectName = rootProject.name.replace("-client", "")
-project.ext["artifactName"] = "${project.name}"
+project.ext["artifactName"] = project.name
 
 group = "$groupId.${project.name}"
 version = project.findProperty("publishVersion") ?: "0.0.1"
@@ -35,16 +26,7 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
-    /**
-     * using jvm for Android targets inorder for the jvm jar file to be created.
-     * this is needed for the MavenLocal dependecny.
-     * only issue Android SDK specific implementaations wont work. This is still work in prgress.
-     */
     jvm {
-        compilations.all {
-            //            kotlinOptions.jvmTarget = "1.8"
-        }
-        //withJava()
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
         }
@@ -52,36 +34,16 @@ kotlin {
 
 
     js(IR) {
-        moduleName ="${project.name}"
+        moduleName = project.name
 
         compilations["main"].packageJson {
             name = "@$scope/$moduleName"
             version = project.version as String
             customField("buildTimeStamp", "${System.currentTimeMillis()}")
         }
-        /**
-         * browser()
-         * It sets the JavaScript target execution environment as browser.
-         * It provides a Gradle task—jsBrowserTest that runs all js tests inside the browser using karma and webpack.
-         */
         browser()
-        /**
-         * nodejs()
-         * It sets the JavaScript target execution environment as nodejs.
-         * It provides a Gradle task—jsNodeTest that runs all js tests inside nodejs using the built-in test framework.
-         */
         nodejs()
-        /**
-         * binaries.library()
-         * It tells the Kotlin compiler to produce Kotlin/JS code as a distributable node library.
-         * Depending on which target you've used along with this,
-         * you would get Gradle tasks to generate library distribution files
-         */
         binaries.library()
-        /**
-         * binaries.executable()
-         * it tells the Kotlin compiler to produce Kotlin/JS code as webpack executable .js files.
-         */
         binaries.executable()
     }
 
@@ -94,10 +56,9 @@ kotlin {
         val commonMain by getting {
             kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
             dependencies {
-                api("io.telereso.kmp:core:$coreVersion")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-
+                api(libs.telereso.core)
+                implementation(libs.ktor.serialization.kotlinx.json)
+                implementation(libs.kotlinx.coroutines.core)
             }
         }
         val commonTest by getting {
@@ -105,6 +66,7 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
+
         val androidMain by getting
         val androidTest by getting
         val iosX64Main by getting
@@ -134,14 +96,17 @@ kotlin {
 }
 
 android {
-    namespace = "${(group as String).replace("-", ".")}"
-    compileSdk = compileSdkVer
+    namespace = (group as String).replace("-", ".")
+    compileSdk = libs.versions.compileSdk.get().toInt()
     buildFeatures {
         buildConfig = false
     }
     defaultConfig {
-        minSdk = minSdkVersion
-        targetSdk = targetSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.valueOf("VERSION_${libs.versions.java.get()}")
+        targetCompatibility = JavaVersion.valueOf("VERSION_${libs.versions.java.get()}")
     }
 }
 

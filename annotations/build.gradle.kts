@@ -1,7 +1,6 @@
 plugins {
-  kotlin("multiplatform")
-  id("com.android.library")
-  id("com.google.devtools.ksp")
+  alias(libs.plugins.kotlin.multiplatform)
+  alias(libs.plugins.android.library)
   id("maven-publish")
   id("convention.publication")
 }
@@ -86,12 +85,18 @@ kotlin {
 
 android {
   namespace = "io.telereso.kmp.annotations"
-  compileSdk = 32
+  compileSdk = libs.versions.compileSdk.get().toInt()
   buildFeatures {
     buildConfig = false
   }
   defaultConfig {
-    minSdk = 21
-    targetSdk = 32
+    minSdk = libs.versions.minSdk.get().toInt()
+  }
+  compileOptions {
+    sourceCompatibility = JavaVersion.valueOf("VERSION_${libs.versions.java.get()}")
+    targetCompatibility = JavaVersion.valueOf("VERSION_${libs.versions.java.get()}")
   }
 }
+tasks.findByName("jsNodeProductionLibraryPrepare")?.dependsOn("jsProductionExecutableCompileSync")
+tasks.findByName("jsBrowserProductionLibraryPrepare")?.dependsOn("jsProductionExecutableCompileSync")
+tasks.findByName("jsBrowserProductionWebpack")?.dependsOn("jsProductionLibraryCompileSync")
