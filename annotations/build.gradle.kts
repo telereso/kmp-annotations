@@ -97,6 +97,69 @@ android {
     targetCompatibility = JavaVersion.valueOf("VERSION_${libs.versions.java.get()}")
   }
 }
-tasks.findByName("jsNodeProductionLibraryPrepare")?.dependsOn("jsProductionExecutableCompileSync")
-tasks.findByName("jsBrowserProductionLibraryPrepare")?.dependsOn("jsProductionExecutableCompileSync")
-tasks.findByName("jsBrowserProductionWebpack")?.dependsOn("jsProductionLibraryCompileSync")
+
+//////////////////// TODO remove this section with kotlin 1.9.0 ////////////////////
+tasks.getByName("jsNodeProductionLibraryPrepare").dependsOn("jsProductionExecutableCompileSync")
+tasks.getByName("jsBrowserProductionLibraryPrepare").dependsOn("jsProductionExecutableCompileSync")
+tasks.getByName("jsBrowserProductionWebpack").dependsOn("jsProductionLibraryCompileSync")
+
+tasks.getByName("signIosSimulatorArm64Publication")
+  .dependsOn("publishIosArm64PublicationToMavenLocal")
+  .dependsOn("publishIosArm64PublicationToSonatypeRepository")
+
+tasks.getByName("signIosX64Publication")
+  .dependsOn("publishIosArm64PublicationToMavenLocal")
+  .dependsOn("publishIosSimulatorArm64PublicationToMavenLocal")
+  .dependsOn("publishIosSimulatorArm64PublicationToSonatypeRepository")
+
+tasks.getByName("signJsPublication")
+  .dependsOn("publishIosArm64PublicationToMavenLocal")
+  .dependsOn("publishIosSimulatorArm64PublicationToMavenLocal")
+  .dependsOn("publishIosX64PublicationToMavenLocal")
+  .dependsOn("publishIosX64PublicationToSonatypeRepository")
+
+tasks.getByName("signJvmPublication")
+  .dependsOn("publishIosArm64PublicationToMavenLocal")
+  .dependsOn("publishIosSimulatorArm64PublicationToMavenLocal")
+  .dependsOn("publishIosX64PublicationToMavenLocal")
+  .dependsOn("publishJsPublicationToMavenLocal")
+  .dependsOn("publishJsPublicationToSonatypeRepository")
+
+tasks.getByName("signKotlinMultiplatformPublication")
+  .dependsOn("publishIosArm64PublicationToMavenLocal")
+  .dependsOn("publishIosSimulatorArm64PublicationToMavenLocal")
+  .dependsOn("publishIosX64PublicationToMavenLocal")
+  .dependsOn("publishJsPublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToSonatypeRepository")
+
+tasks.getByName("signWatchosArm32Publication")
+  .dependsOn("publishIosSimulatorArm64PublicationToMavenLocal")
+  .dependsOn("publishIosX64PublicationToMavenLocal")
+  .dependsOn("publishJsPublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToMavenLocal")
+  .dependsOn("publishKotlinMultiplatformPublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToSonatypeRepository")
+  .dependsOn("publishKotlinMultiplatformPublicationToSonatypeRepository")
+
+tasks.getByName("signWatchosArm64Publication")
+  .dependsOn("publishIosX64PublicationToMavenLocal")
+  .dependsOn("publishJsPublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToMavenLocal")
+  .dependsOn("publishKotlinMultiplatformPublicationToMavenLocal")
+  .dependsOn("publishWatchosArm32PublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToSonatypeRepository")
+  .dependsOn("publishWatchosArm32PublicationToSonatypeRepository")
+
+tasks.getByName("signWatchosSimulatorArm64Publication")
+  .dependsOn("publishIosX64PublicationToMavenLocal")
+  .dependsOn("publishJsPublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToMavenLocal")
+  .dependsOn("publishKotlinMultiplatformPublicationToMavenLocal")
+  .dependsOn("publishWatchosArm32PublicationToMavenLocal")
+  .dependsOn("publishWatchosArm64PublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToSonatypeRepository")
+  .dependsOn("publishWatchosArm32PublicationToSonatypeRepository")
+  .dependsOn("publishWatchosArm64PublicationToSonatypeRepository")
+
+//////////////////////////////////////////////////////////////////////////////////////////
