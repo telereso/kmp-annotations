@@ -99,9 +99,9 @@ class ReactNativeMangerVisitor(
 
 
         val methods = classDeclaration.getAllFunctions().mapNotNull {
-            if (it.getVisibility() == Visibility.PUBLIC &&
-                !it.skipReactNative() &&
-                !skipFunctions.contains(it.simpleName.asString())
+            if (it.getVisibility() == Visibility.PUBLIC
+                && !it.skipReactNative()
+                && !skipFunctions.contains(it.simpleName.asString())
             ) {
                 """  
                 |  @ReactMethod
@@ -189,7 +189,9 @@ class ReactNativeMangerVisitor(
         }
 
         val methods = classDeclaration.getAllFunctions().mapNotNull {
-            if (it.getVisibility() == Visibility.PUBLIC && !skipFunctions.contains(it.simpleName.asString())) {
+            if (it.getVisibility() == Visibility.PUBLIC
+                && !it.skipReactNative()
+                && !skipFunctions.contains(it.simpleName.asString())) {
                 """
                 |    @objc(${
                     it.getTypedHeaderParametersIos()
@@ -267,7 +269,9 @@ class ReactNativeMangerVisitor(
         val enums = hashMapOf<String, List<String>>()
 
         val modelImports = classDeclaration.getAllFunctions().mapNotNull {
-            if (it.getVisibility() == Visibility.PUBLIC && !skipFunctions.contains(it.simpleName.asString())) {
+            if (it.getVisibility() == Visibility.PUBLIC
+                && !it.skipReactNative()
+                && !skipFunctions.contains(it.simpleName.asString())) {
                 it.getMethodBodyIos(className, enums).second
             } else null
         }

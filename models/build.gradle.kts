@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.dokka)
-    alias(libs.plugins.telereso)
+    alias(libs.plugins.telereso.kmp)
 }
 
 // Setup extras variables

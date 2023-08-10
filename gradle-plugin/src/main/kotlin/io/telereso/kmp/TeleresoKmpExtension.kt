@@ -42,6 +42,8 @@ open class TeleresoKmpExtension @Inject constructor(
      * set to true to stop copying generated reactNative files react native dir
      */
     var enableReactNativeExport: Boolean = false
+
+    var disableReactNativeGradle8Workaround: Boolean = false
     /**
      * set to true to stop copying generated flutter files into flutter dir
      */

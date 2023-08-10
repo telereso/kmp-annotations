@@ -7,9 +7,13 @@ if [[ "$@" == *"--sonatype" ]]; then
     -x :annotations-models:jsTestPackageJson -x :annotations-models:jsPackageJson \
     -x :annotations-client:jsPackageJson -x :annotations-client:jsTestPackageJson
 #    ./gradlew closeAndReleaseSonatypeStagingRepository
-else
+elif [[ "$@" == *"--local" ]]; then
     ./gradlew -Dmaven.repo.local="$(pwd)/build/.m2/repository" publishToMavenLocal "-PpublishVersion=$PUBLISH_VERSION" \
     -x :annotations-models:jsTestPackageJson -x :annotations-models:jsPackageJson \
     -x :annotations-client:jsPackageJson -x :annotations-client:jsTestPackageJson
+else
+  ./gradlew publishToMavenLocal "-PpublishVersion=$PUBLISH_VERSION-local" \
+      -x :annotations-models:jsTestPackageJson -x :annotations-models:jsPackageJson \
+      -x :annotations-client:jsPackageJson -x :annotations-client:jsTestPackageJson
 fi
 

@@ -29,19 +29,23 @@ import com.google.devtools.ksp.gradle.KspGradleSubplugin
 import io.telereso.kmp.TeleresoKmpExtension.Companion.teleresoKmp
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.extra
 import java.io.File
 import java.util.*
+import kotlin.jvm.optionals.getOrNull
 
-const val KEY_TELERESO_KMP_DEVELOPMENT_MODE = "teleresoKmpDevelopmentMode"
+const val KEY_TELERESO_KMP_DEVELOPMENT_MODE = "teleresoKmpDevelopmentPath"
 const val KEY_TELERESO_KMP_VERSION = "teleresoKmpVersion"
 class KmpPlugin : Plugin<Project> {
     override fun apply(project: Project): Unit = project.run {
 
         pluginManager.apply(KspGradleSubplugin::class.java)
+
+        val libs = extensions.findByType(VersionCatalogsExtension::class.java)?.named("libs")
 
         val kspExtension = extensions.getByType(KspExtension::class.java)
         val scope = getScope()?.let { scope ->
@@ -61,14 +65,14 @@ class KmpPlugin : Plugin<Project> {
         val devModeLocalProp = localProps[KEY_TELERESO_KMP_DEVELOPMENT_MODE]?.toString()
         val devModeProjectProp = findProperty(KEY_TELERESO_KMP_DEVELOPMENT_MODE)?.toString()
 
-        if ((devModeLocalProp ?: devModeProjectProp)?.toBoolean() == true
+        if (!(devModeLocalProp ?: devModeProjectProp).isNullOrBlank()
             && findProperty("publishGradlePlugin")?.toString()?.toBoolean() != true
         ) {
             log("Using local projects :annotations and :processor")
             dependencies.add("commonMainImplementation", project(":annotations"))
             dependencies.add("kspCommonMainMetadata", project(":processor"))
         } else {
-            val annotationsVersion = property(KEY_TELERESO_KMP_VERSION).toString()
+            val annotationsVersion = libs?.findVersion("teleresoKmp")?.getOrNull() ?: findProperty(KEY_TELERESO_KMP_VERSION)?.toString()
             dependencies.add("commonMainImplementation", "io.telereso.kmp:annotations:$annotationsVersion")
             dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:$annotationsVersion")
         }
@@ -111,11 +115,24 @@ class KmpPlugin : Plugin<Project> {
                 "allTests"
             )
 
+            // TODO remove these when upgrading to kotlin 1.9.0
+            tasks.findByName("compileReleaseKotlinAndroid")
+                ?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("compileDebugKotlinAndroid")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("compileKotlinJvm")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("compileKotlinIosArm64")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("compileKotlinIosSimulatorArm64")
+                ?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("compileKotlinIosX64")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("compileKotlinJs")?.dependsOn("kspCommonMainKotlinMetadata")
 
-            tasks.findByName("jsNodeProductionLibraryPrepare")?.dependsOn("jsProductionExecutableCompileSync")
-            tasks.findByName("jsBrowserProductionLibraryPrepare")?.dependsOn("jsProductionExecutableCompileSync")
-            tasks.findByName("jsBrowserProductionWebpack")?.dependsOn("jsProductionLibraryCompileSync")
+            // TODO remove these when upgrading to kotlin 1.9.0
+            tasks.findByName("jsNodeProductionLibraryPrepare")
+                ?.dependsOn("jsProductionExecutableCompileSync")
+            tasks.findByName("jsBrowserProductionLibraryPrepare")
+                ?.dependsOn("jsProductionExecutableCompileSync")
+            tasks.findByName("jsBrowserProductionWebpack")
+                ?.dependsOn("jsProductionLibraryCompileSync")
 
             // Models tasks
 
@@ -220,6 +237,7 @@ class KmpPlugin : Plugin<Project> {
                 log("Skipping adding reactNative tasks")
             } else {
                 log("Adding reactNative tasks")
+                val reactNativeDir = "${baseDir}/react-native-${projectPackageName.replace(".", "-")}"
 
                 // Android tasks
                 tasks.getByName(copyGeneratedFilesAndroidTask)
@@ -228,9 +246,16 @@ class KmpPlugin : Plugin<Project> {
 //                    .finalizedBy(cleanAndroidGeneratedFiles)
 
                 val copyAndroidExampleGradle = "copyAndroidExampleGradle"
-                tasks.create<Copy>(copyAndroidExampleGradle) {
-                    from("${baseDir}/gradle/")
-                    into("${baseDir}/react-native-${projectPackageName.replace(".", "-")}/example/android/gradle/")
+                tasks.create(copyAndroidExampleGradle) {
+                    copy {
+                        from("${baseDir}/gradle/")
+                        into("$reactNativeDir/example/android/gradle/")
+                    }
+
+                    copy {
+                        from("${baseDir}/local.properties")
+                        into("${reactNativeDir}/example/android/")
+                    }
                 }
 
                 // iOS tasks
@@ -250,6 +275,40 @@ class KmpPlugin : Plugin<Project> {
                     tasks.findByName(it)?.dependsOn(copyGeneratedFilesJsTask)
                 }
 
+                // Workaround to support gradle 8 and java 17 with kotlin 1.8
+                if (!teleresoKmp.disableReactNativeGradle8Workaround)
+                    listOf(
+                        rootDir.resolve(
+                            "${baseDir}/react-native-${
+                                projectPackageName.replace(
+                                    ".",
+                                    "-"
+                                )
+                            }/example/node_modules/react-native-gradle-plugin/build.gradle.kts"
+                        ),
+                        rootDir.resolve(
+                            "${baseDir}/react-native-${
+                                projectPackageName.replace(
+                                    ".",
+                                    "-"
+                                )
+                            }/node_modules/react-native-gradle-plugin/build.gradle.kts"
+                        )
+                    ).forEach { f ->
+                        if (f.exists()) {
+                            f.writeText(
+                                f.readText()
+                                    .replace(
+                                        """kotlin("jvm") version "1.6.10"""",
+                                        """kotlin("jvm") version "1.8.21""""
+                                    )
+                                    .replace(
+                                        """JavaVersion.VERSION_11.majorVersion""",
+                                        """JavaVersion.VERSION_17.majorVersion"""
+                                    )
+                            )
+                        }
+                    }
             }
         }
     }

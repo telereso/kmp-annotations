@@ -14,7 +14,7 @@ plugins {
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.test.logger)
     alias(libs.plugins.buildkonfig)
-    alias(libs.plugins.telereso)
+    alias(libs.plugins.telereso.kmp)
 }
 
 
@@ -167,11 +167,9 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation(kotlin("test-common"))
                 implementation(kotlin("test-annotations-common"))
-                implementation(libs.kotlinx.coroutines.test)
-                implementation("io.kotest:kotest-framework-engine:5.5.3")
-                implementation("io.kotest:kotest-assertions-core:5.5.3")
-
-                implementation(libs.ktor.client.mock)
+                implementation(libs.test.kotlinx.coroutines.test)
+                implementation(libs.bundles.test.kotest)
+                implementation(libs.test.ktor.client.mock)
             }
         }
         val jvmMain by getting {

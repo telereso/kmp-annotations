@@ -100,8 +100,8 @@ class ModelVisitor(
             |
             |${commentJsExport}@JsExport
             |${commentJsExport}@JsName("${className}FromJson")
-            |${internalString}fun $className.Companion.fromJson(json:String): $className{
-            |   return ${convertersClassName}JsonSerializer.decodeFromString(json)
+            |${internalString}fun $className.Companion.fromJson(json:String?): $className{
+            |   return ${convertersClassName}JsonSerializer.decodeFromString(json ?: "{}")
             |}
             |
             |${commentJsExport}@JsExport
@@ -112,8 +112,8 @@ class ModelVisitor(
             |
             |${commentJsExport}@JsExport
             |${commentJsExport}@JsName("${className}FromJsonArray")
-            |${internalString}fun $className.Companion.fromJsonArray(json:String): Array<$className> {
-            |   return ${convertersClassName}JsonSerializer.decodeFromString(ListSerializer($className.serializer()), json).toTypedArray()
+            |${internalString}fun $className.Companion.fromJsonArray(json:String?): Array<$className> {
+            |   return ${convertersClassName}JsonSerializer.decodeFromString(ListSerializer($className.serializer()), json ?: "[]").toTypedArray()
             |}
             |
             |
