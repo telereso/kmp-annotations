@@ -125,6 +125,13 @@ class KmpPlugin : Plugin<Project> {
                 ?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("compileKotlinIosX64")?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("compileKotlinJs")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("jsSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("iosArm64SourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("androidReleaseSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("sourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("iosX64SourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("iosSimulatorArm64SourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("jvmSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
 
             // TODO remove these when upgrading to kotlin 1.9.0
             tasks.findByName("jsNodeProductionLibraryPrepare")
