@@ -11,6 +11,7 @@ java.sourceCompatibility = JavaVersion.VERSION_11
 
 repositories {
 	mavenCentral()
+	maven { url = uri("https://s01.oss.sonatype.org/content/groups/staging") }
 	maven { url = uri("https://repo.spring.io/milestone") }
 	maven { url = uri("https://repo.spring.io/snapshot") }
 }

@@ -5,6 +5,7 @@ pluginManagement {
         google()
         gradlePluginPortal()
         mavenCentral()
+        maven { url = uri("https://s01.oss.sonatype.org/content/groups/staging") }
         maven { url = uri("https://repo.spring.io/milestone") }
         maven { url = uri("https://repo.spring.io/snapshot") }
     }
@@ -14,6 +15,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://s01.oss.sonatype.org/content/groups/staging") }
     }
 }
 rootProject.name = "kmp-annotations"
