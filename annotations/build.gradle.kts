@@ -1,6 +1,6 @@
 plugins {
-  alias(libs.plugins.kotlin.multiplatform)
-  alias(libs.plugins.android.library)
+  alias(kmpLibs.plugins.kotlin.multiplatform)
+  alias(kmpLibs.plugins.android.library)
   id("maven-publish")
   id("convention.publication")
 }
@@ -85,16 +85,16 @@ kotlin {
 
 android {
   namespace = "io.telereso.kmp.annotations"
-  compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdk = kmpLibs.versions.compileSdk.get().toInt()
   buildFeatures {
     buildConfig = false
   }
   defaultConfig {
-    minSdk = libs.versions.minSdk.get().toInt()
+    minSdk = kmpLibs.versions.minSdk.get().toInt()
   }
   compileOptions {
-    sourceCompatibility = JavaVersion.valueOf("VERSION_${libs.versions.java.get()}")
-    targetCompatibility = JavaVersion.valueOf("VERSION_${libs.versions.java.get()}")
+    sourceCompatibility = JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
+    targetCompatibility = JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
   }
 }
 

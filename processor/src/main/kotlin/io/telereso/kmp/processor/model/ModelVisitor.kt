@@ -150,14 +150,12 @@ class ModelVisitor(
             |        prettyPrint = false
             |        isLenient = true
             |        ignoreUnknownKeys = true
-            |        encodeDefaults = true
             |}
             |
             |val ${convertersClassName}JsonPrettySerializer = Json {
             |        prettyPrint = true
             |        isLenient = true
             |        ignoreUnknownKeys = true
-            |        encodeDefaults = true
             |}
             |
             """.trimMargin().toByteArray()

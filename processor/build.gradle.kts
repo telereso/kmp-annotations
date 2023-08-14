@@ -33,7 +33,7 @@
  */
 plugins {
   kotlin("jvm")
-  alias(libs.plugins.ksp)
+  alias(kmpLibs.plugins.ksp)
   `maven-publish`
   id("convention.publication")
 }
@@ -59,6 +59,6 @@ sourceSets.main {
 
 dependencies {
   implementation(project(":annotations"))
-  implementation("com.google.devtools.ksp:symbol-processing-api:${libs.versions.ksp.get()}")
-  implementation(libs.ktor.serialization.kotlinx.json)
+  implementation("com.google.devtools.ksp:symbol-processing-api:${kmpLibs.versions.ksp.get()}")
+  implementation(kmpLibs.ktor.serialization.kotlinx.json)
 }

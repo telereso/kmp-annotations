@@ -1,9 +1,9 @@
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.dokka)
-    alias(libs.plugins.telereso.kmp)
+    alias(kmpLibs.plugins.android.library)
+    alias(kmpLibs.plugins.kotlin.multiplatform)
+    alias(kmpLibs.plugins.kotlin.serialization)
+    alias(kmpLibs.plugins.dokka)
+    alias(kmpLibs.plugins.telereso.kmp)
 }
 
 // Setup extras variables
@@ -56,9 +56,9 @@ kotlin {
         val commonMain by getting {
             kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
             dependencies {
-                api(libs.telereso.core)
-                implementation(libs.ktor.serialization.kotlinx.json)
-                implementation(libs.kotlinx.coroutines.core)
+                api(kmpLibs.telereso.core)
+                implementation(kmpLibs.ktor.serialization.kotlinx.json)
+                implementation(kmpLibs.kotlinx.coroutines.core)
             }
         }
         val commonTest by getting {
@@ -97,16 +97,16 @@ kotlin {
 
 android {
     namespace = (group as String).replace("-", ".")
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk = kmpLibs.versions.compileSdk.get().toInt()
     buildFeatures {
         buildConfig = false
     }
     defaultConfig {
-        minSdk = libs.versions.minSdk.get().toInt()
+        minSdk = kmpLibs.versions.minSdk.get().toInt()
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.valueOf("VERSION_${libs.versions.java.get()}")
-        targetCompatibility = JavaVersion.valueOf("VERSION_${libs.versions.java.get()}")
+        sourceCompatibility = JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
+        targetCompatibility = JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
     }
 }
 

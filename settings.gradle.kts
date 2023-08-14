@@ -1,3 +1,5 @@
+val teleresoKmpCatalog: String by settings
+
 pluginManagement {
     plugins {
     }
@@ -13,9 +15,16 @@ pluginManagement {
 
 dependencyResolutionManagement {
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
         maven { url = uri("https://s01.oss.sonatype.org/content/groups/staging") }
+    }
+    versionCatalogs {
+        create("kmpLibs") {
+            from("io.telereso.kmp:catalog:$teleresoKmpCatalog")
+            version("teleresoKmp", "0.0.1-local")
+        }
     }
 }
 rootProject.name = "kmp-annotations"

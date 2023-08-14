@@ -11,7 +11,7 @@ buildscript {
   dependencies {
     classpath 'com.android.tools.build:gradle:3.5.3'
     // noinspection DifferentKotlinGradleVersion
-    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${libs.versions.kotlin.get()}"
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kmpLibs.versions.kotlin.get()}"
   }
 }
 
@@ -57,8 +57,8 @@ android {
   }
 
   compileOptions {
-    sourceCompatibility JavaVersion.valueOf("VERSION_${libs.versions.java.get()}")
-    targetCompatibility JavaVersion.valueOf("VERSION_${libs.versions.java.get()}")
+    sourceCompatibility JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
+    targetCompatibility JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
   }
 
 }
@@ -136,7 +136,7 @@ repositories {
 dependencies {
     //noinspection GradleDynamicVersion
   implementation "com.facebook.react:react-native:+"
-  implementation "org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlin.get()}"
+  implementation "org.jetbrains.kotlin:kotlin-stdlib:${kmpLibs.versions.kotlin.get()}"
   implementation(project(":annotations-client")){
     exclude group:'io.telereso.kmp', module:'core-jvm'
   }

@@ -2,19 +2,19 @@ import org.gradle.configurationcache.extensions.capitalized
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 
 plugins {
-    alias(libs.plugins.android.library)
+    alias(kmpLibs.plugins.android.library)
 
-    alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.kotlin.native.cocoapods)
-    alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.kotlin.parcelize)
-    alias(libs.plugins.kotlinx.kover)
-    alias(libs.plugins.dokka)
+    alias(kmpLibs.plugins.kotlin.multiplatform)
+    alias(kmpLibs.plugins.kotlin.native.cocoapods)
+    alias(kmpLibs.plugins.kotlin.serialization)
+    alias(kmpLibs.plugins.kotlin.parcelize)
+    alias(kmpLibs.plugins.kotlinx.kover)
+    alias(kmpLibs.plugins.dokka)
 
-    alias(libs.plugins.sqldelight)
-    alias(libs.plugins.test.logger)
-    alias(libs.plugins.buildkonfig)
-    alias(libs.plugins.telereso.kmp)
+    alias(kmpLibs.plugins.sqldelight)
+    alias(kmpLibs.plugins.test.logger)
+    alias(kmpLibs.plugins.buildkonfig)
+    alias(kmpLibs.plugins.telereso.kmp)
 }
 
 
@@ -63,7 +63,7 @@ kotlin {
              */
             export(project(":annotations-models"))
 
-            export(libs.telereso.core)
+            export(kmpLibs.telereso.core)
 
 
             // Dependency export
@@ -150,16 +150,16 @@ kotlin {
             dependencies {
                 implementation(project(":annotations"))
                 api(project(":annotations-models"))
-                api(libs.telereso.core)
+                api(kmpLibs.telereso.core)
                 /**
                  * Add Ktor dependencies
                  * To use the Ktor client in common code, add the dependency to ktor-client-core to the commonMain
                  */
-                implementation(libs.bundles.ktor)
+                implementation(kmpLibs.bundles.ktor)
 
-                implementation(libs.bundles.sqldelight)
+                implementation(kmpLibs.bundles.sqldelight)
 
-                implementation(libs.bundles.kotlinx)
+                implementation(kmpLibs.bundles.kotlinx)
             }
         }
         val commonTest by getting {
@@ -167,36 +167,36 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation(kotlin("test-common"))
                 implementation(kotlin("test-annotations-common"))
-                implementation(libs.test.kotlinx.coroutines.test)
-                implementation(libs.bundles.test.kotest)
-                implementation(libs.test.ktor.client.mock)
+                implementation(kmpLibs.test.kotlinx.coroutines.test)
+                implementation(kmpLibs.bundles.test.kotest)
+                implementation(kmpLibs.test.ktor.client.mock)
             }
         }
         val jvmMain by getting {
             dependencies {
-                implementation(libs.ktor.client.okhttp)
-                implementation(libs.okhttp.logging)
-                implementation(libs.sqldelight.runtime.jvm)
+                implementation(kmpLibs.ktor.client.okhttp)
+                implementation(kmpLibs.okhttp.logging)
+                implementation(kmpLibs.sqldelight.runtime.jvm)
             }
         }
 
         val jvmTest by getting {
             dependsOn(commonTest)
             dependencies {
-                implementation(libs.sqldelight.sqlite.driver)
+                implementation(kmpLibs.sqldelight.sqlite.driver)
             }
         }
         val androidMain by getting {
             dependencies {
-                implementation(libs.ktor.client.okhttp)
-                implementation(libs.okhttp.logging)
-                implementation(libs.sqldelight.android.driver)
+                implementation(kmpLibs.ktor.client.okhttp)
+                implementation(kmpLibs.okhttp.logging)
+                implementation(kmpLibs.sqldelight.android.driver)
             }
         }
         val androidTest by getting {
             dependsOn(commonTest)
             dependencies {
-                implementation(libs.sqldelight.sqlite.driver)
+                implementation(kmpLibs.sqldelight.sqlite.driver)
             }
         }
         val iosX64Main by getting
@@ -219,9 +219,9 @@ kotlin {
                  * For iOS, we add the ktor-client-darwin dependency
                  * Engines are used to process network requests. Note that a specific platform may require a specific engine that processes network requests.
                  */
-                implementation(libs.ktor.client.darwin)
+                implementation(kmpLibs.ktor.client.darwin)
 
-                implementation(libs.sqldelight.native.driver)
+                implementation(kmpLibs.sqldelight.native.driver)
             }
         }
         val iosX64Test by getting
@@ -247,19 +247,19 @@ kotlin {
                 /**
                  * Engines are used to process network requests. Note that a specific platform may require a specific engine that processes network requests.
                  */
-                implementation(libs.ktor.client.js)
+                implementation(kmpLibs.ktor.client.js)
 
-                implementation(libs.sqldelight.sqljs.driver)
+                implementation(kmpLibs.sqldelight.sqljs.driver)
 
 //                implementation(devNpm("copy-webpack-plugin", "9.1.0"))
-                implementation(npm("sql.js", libs.versions.sqlJs.get()))
-                implementation(npm("@js-joda/core", libs.versions.js.joda.core.get()))
+                implementation(npm("sql.js", kmpLibs.versions.sqlJs.get()))
+                implementation(npm("@js-joda/core", kmpLibs.versions.js.joda.core.get()))
             }
         }
         val jsTest by getting {
             dependsOn(commonTest)
             dependencies {
-                implementation(libs.sqldelight.sqljs.driver)
+                implementation(kmpLibs.sqldelight.sqljs.driver)
             }
         }
     }
@@ -406,15 +406,15 @@ sqldelight {
 
 android {
     namespace = "$groupId.${project.name.replace("-",".")}"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk = kmpLibs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = libs.versions.minSdk.get().toInt()
+        minSdk = kmpLibs.versions.minSdk.get().toInt()
     }
     resourcePrefix = "${rootProject.name.replace("-", "_")}_"
     compileOptions {
-        sourceCompatibility = JavaVersion.valueOf("VERSION_${libs.versions.java.get()}")
-        targetCompatibility = JavaVersion.valueOf("VERSION_${libs.versions.java.get()}")
+        sourceCompatibility = JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
+        targetCompatibility = JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
     }
 }
 

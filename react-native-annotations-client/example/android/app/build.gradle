@@ -259,7 +259,7 @@ dependencies {
     implementation(project(":annotations-client")){
       exclude group:'io.telereso.kmp', module:'core-jvm'
     }
-    implementation libs.telereso.core.android
+    implementation kmpLibs.telereso.core.android
 
     //noinspection GradleDynamicVersion
     implementation "com.facebook.react:react-native:+"  // From node_modules
