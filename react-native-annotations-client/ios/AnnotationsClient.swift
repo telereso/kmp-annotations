@@ -227,15 +227,4 @@ if (manager == nil) {
         }
     }
 
-    @objc(testSkip:withResolver:withRejecter:)
-    func testSkip(param: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
-        let manager = AnnotationsClientManager.Companion().getInstanceOrNull()
-if (manager == nil) {
-            reject("testSkip error", "AnnotationsClientManager was not initialized", "AnnotationsClientManager was not initialized")
-        } else {
-            
-            resolve(manager!.testSkip(param: param))
-        }
-    }
-
 }

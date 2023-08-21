@@ -1,16 +1,11 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    //trick: for the same plugin versions in all sub-modules
-    id("com.android.application").version("7.3.1").apply(false)
-    id("com.android.library").version("7.3.1").apply(false)
+    alias(kmpLibs.plugins.kotlin.multiplatform) apply false
+    alias(kmpLibs.plugins.android.library) apply false
+    alias(kmpLibs.plugins.kotlin.native.cocoapods) apply false
+    alias(kmpLibs.plugins.kotlin.parcelize) apply false
 
-    id("org.jetbrains.kotlin.android").version("1.8.21").apply(false)
-    id("org.jetbrains.kotlin.plugin.parcelize").version("1.8.21").apply(false)
-    kotlin("multiplatform").version("1.8.21").apply(false)
-    id("org.jetbrains.kotlin.native.cocoapods").version("1.8.21").apply(false)
-
-    id("com.squareup.sqldelight").version("1.5.3").apply(false)
 }
 
 group = "io.telereso.kmp"
@@ -21,25 +16,8 @@ version = project.findProperty("publishVersion") ?: "0.0.1-local"
 val groupId by extra { "io.telereso" }
 val scope by extra { "telereso" }
 
-// Android
-val buildToolsVersion by extra { "31.0.0" }
-val minSdkVersion by extra { 21 }
-val compileSdkVer by extra { 31 }
-val targetSdkVersion by extra { 31 }
-
-// Dependencies versions
-val ktorVersion by extra { "2.1.3" }
-val sqlDelightVersion by extra { "1.5.5" }
-val coroutinesVersion by extra { "1.7.1" }
-val kotlinxDatetimeVersion by extra { "0.4.0" }
-val coreVersion by extra { "0.0.28" }
-
 
 allprojects {
-    ext {
-        set("minSdkVersions", 21)
-        set("ktorVersions", "2.1.0")
-    }
     configurations.all {
         resolutionStrategy {
             force("io.telereso.kmp:annotations:0.0.1-local")
@@ -51,7 +29,7 @@ allprojects {
 //}
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "17"
 }
 
 buildscript {
@@ -63,12 +41,7 @@ buildscript {
     }
     dependencies {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.21")
-        classpath("com.android.tools.build:gradle:7.0.4")
-        classpath("org.jetbrains.kotlin:kotlin-serialization:1.8.21")
-        classpath("com.squareup.sqldelight:gradle-plugin:1.5.5")
-        classpath("org.jetbrains.dokka:dokka-gradle-plugin:1.8.20")
-        classpath("org.jfrog.buildinfo:build-info-extractor-gradle:latest.release")
-        classpath("com.codingfeline.buildkonfig:buildkonfig-gradle-plugin:0.13.3")
+        classpath("com.android.tools.build:gradle:8.0.2")
     }
 }
 
@@ -78,6 +51,7 @@ allprojects {
         gradlePluginPortal()
         mavenCentral()
         mavenLocal()
+        maven { url = uri("https://s01.oss.sonatype.org/content/groups/staging") }
     }
 }
 //tasks.register("clean", Delete::class) {

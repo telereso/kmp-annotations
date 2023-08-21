@@ -7,9 +7,27 @@ if [[ "$@" == *"--sonatype" ]]; then
     -x :annotations-models:jsTestPackageJson -x :annotations-models:jsPackageJson \
     -x :annotations-client:jsPackageJson -x :annotations-client:jsTestPackageJson
 #    ./gradlew closeAndReleaseSonatypeStagingRepository
-else
+elif [[ "$@" == *"--local" ]]; then
     ./gradlew -Dmaven.repo.local="$(pwd)/build/.m2/repository" publishToMavenLocal "-PpublishVersion=$PUBLISH_VERSION" \
+    -x publishWatchosArm64PublicationToSonatypeRepository -x publishWatchosArm32PublicationToSonatypeRepository \
+    -x publishJvmPublicationToSonatypeRepository -x publishWatchosArm32PublicationToSonatypeRepository \
+    -x publishJvmPublicationToSonatypeRepository -x publishKotlinMultiplatformPublicationToSonatypeRepository \
+    -x publishJvmPublicationToSonatypeRepository -x publishJvmPublicationToSonatypeRepository \
+    -x publishIosArm64PublicationToSonatypeRepository -x publishIosSimulatorArm64PublicationToSonatypeRepository \
+    -x publishIosX64PublicationToSonatypeRepository publishJsPublicationToSonatypeRepository \
+    -x :annotations:publishJsPublicationToSonatypeRepository \
     -x :annotations-models:jsTestPackageJson -x :annotations-models:jsPackageJson \
     -x :annotations-client:jsPackageJson -x :annotations-client:jsTestPackageJson
+else
+  ./gradlew publishToMavenLocal "-PpublishVersion=$PUBLISH_VERSION-local" \
+      -x publishWatchosArm64PublicationToSonatypeRepository -x publishWatchosArm32PublicationToSonatypeRepository \
+      -x publishJvmPublicationToSonatypeRepository -x publishWatchosArm32PublicationToSonatypeRepository \
+      -x publishJvmPublicationToSonatypeRepository -x publishKotlinMultiplatformPublicationToSonatypeRepository \
+      -x publishJvmPublicationToSonatypeRepository -x publishJvmPublicationToSonatypeRepository \
+      -x publishIosArm64PublicationToSonatypeRepository -x publishIosSimulatorArm64PublicationToSonatypeRepository \
+      -x publishIosX64PublicationToSonatypeRepository publishJsPublicationToSonatypeRepository \
+      -x :annotations:publishJsPublicationToSonatypeRepository \
+      -x :annotations-models:jsTestPackageJson -x :annotations-models:jsPackageJson \
+      -x :annotations-client:jsPackageJson -x :annotations-client:jsTestPackageJson
 fi
 

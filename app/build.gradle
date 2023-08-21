@@ -33,8 +33,8 @@
  */
 //file:noinspection GroovyAssignabilityCheck
 plugins {
-  id 'com.google.devtools.ksp'
-  id 'org.jetbrains.kotlin.plugin.serialization'
+  alias(kmpLibs.plugins.ksp)
+  alias(kmpLibs.plugins.kotlin.serialization)
 }
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
@@ -60,10 +60,19 @@ android {
     viewBinding true
   }
 
+  compileOptions {
+    sourceCompatibility JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
+    targetCompatibility JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
+  }
+  kotlinOptions {
+    jvmTarget = kmpLibs.versions.java.get()
+  }
+
   sourceSets.configureEach {
     kotlin.srcDir("$buildDir/generated/ksp/$name/kotlin/")
     kotlin.srcDir("$buildDir/generated/ksp/$name/resources/kotlin/")
   }
+    namespace 'com.yourcompany.fragmentfactory'
 }
 
 dependencies {

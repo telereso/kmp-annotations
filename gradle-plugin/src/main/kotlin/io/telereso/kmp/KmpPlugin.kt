@@ -29,15 +29,20 @@ import com.google.devtools.ksp.gradle.KspGradleSubplugin
 import io.telereso.kmp.TeleresoKmpExtension.Companion.teleresoKmp
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.extra
 import java.io.File
 import java.util.*
+import kotlin.jvm.optionals.getOrNull
 
-const val KEY_TELERESO_KMP_DEVELOPMENT_MODE = "teleresoKmpDevelopmentMode"
+const val KEY_TELERESO_KMP_DEVELOPMENT_MODE = "teleresoKmpDevelopmentPath"
 const val KEY_TELERESO_KMP_VERSION = "teleresoKmpVersion"
+const val KEY_TELERESO_CATALOG_NAME = "teleresoCatalogName"
+
+
 class KmpPlugin : Plugin<Project> {
     override fun apply(project: Project): Unit = project.run {
 
@@ -58,17 +63,23 @@ class KmpPlugin : Plugin<Project> {
             }
         }
 
+        val catalogNameLocalProp = localProps[KEY_TELERESO_CATALOG_NAME]?.toString()
+        val catalogNameProjectProp = findProperty(KEY_TELERESO_CATALOG_NAME)?.toString()
+        val libs = extensions.findByType(VersionCatalogsExtension::class.java)
+            ?.named(catalogNameLocalProp ?: catalogNameProjectProp ?: "kmpLibs")
+
+
         val devModeLocalProp = localProps[KEY_TELERESO_KMP_DEVELOPMENT_MODE]?.toString()
         val devModeProjectProp = findProperty(KEY_TELERESO_KMP_DEVELOPMENT_MODE)?.toString()
 
-        if ((devModeLocalProp ?: devModeProjectProp)?.toBoolean() == true
+        if (!(devModeLocalProp ?: devModeProjectProp).isNullOrBlank()
             && findProperty("publishGradlePlugin")?.toString()?.toBoolean() != true
         ) {
             log("Using local projects :annotations and :processor")
             dependencies.add("commonMainImplementation", project(":annotations"))
             dependencies.add("kspCommonMainMetadata", project(":processor"))
         } else {
-            val annotationsVersion = property(KEY_TELERESO_KMP_VERSION).toString()
+            val annotationsVersion = libs?.findVersion("teleresoKmp")?.getOrNull() ?: findProperty(KEY_TELERESO_KMP_VERSION)?.toString()
             dependencies.add("commonMainImplementation", "io.telereso.kmp:annotations:$annotationsVersion")
             dependencies.add("kspCommonMainMetadata", "io.telereso.kmp:processor:$annotationsVersion")
         }
@@ -110,6 +121,37 @@ class KmpPlugin : Plugin<Project> {
                 "build",
                 "allTests"
             )
+
+            // TODO remove these when upgrading to kotlin 1.9.0
+            tasks.findByName("compileReleaseKotlinAndroid")
+                ?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("compileDebugKotlinAndroid")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("compileKotlinJvm")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("compileKotlinIosArm64")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("compileKotlinIosSimulatorArm64")
+                ?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("compileKotlinIosX64")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("compileKotlinJs")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("jsSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("iosArm64SourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("androidReleaseSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("sourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("iosX64SourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("iosSimulatorArm64SourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("jvmSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("dokkaHtml")?.dependsOn("transformIosMainCInteropDependenciesMetadataForIde")
+            if(name.endsWith("-client"))
+                tasks.findByName("dokkaHtml")?.dependsOn(":${name.replace("-client","-models")}:transformIosMainCInteropDependenciesMetadataForIde")
+            if(name.endsWith("-models"))
+                tasks.findByName("dokkaHtml")?.dependsOn(":${name.replace("-models","-client")}:transformIosMainCInteropDependenciesMetadataForIde")
+
+            // TODO remove these when upgrading to kotlin 1.9.0
+            tasks.findByName("jsNodeProductionLibraryPrepare")
+                ?.dependsOn("jsProductionExecutableCompileSync")
+            tasks.findByName("jsBrowserProductionLibraryPrepare")
+                ?.dependsOn("jsProductionExecutableCompileSync")
+            tasks.findByName("jsBrowserProductionWebpack")
+                ?.dependsOn("jsProductionLibraryCompileSync")
 
             // Models tasks
 
@@ -210,16 +252,30 @@ class KmpPlugin : Plugin<Project> {
                 into("${baseDir}/react-native-${projectPackageName.replace(".", "-")}/src/")
             }
 
-            if (teleresoKmp.disableReactExport) {
+            if (!teleresoKmp.enableReactNativeExport) {
                 log("Skipping adding reactNative tasks")
             } else {
                 log("Adding reactNative tasks")
+                val reactNativeDir = "${baseDir}/react-native-${projectPackageName.replace(".", "-")}"
 
                 // Android tasks
                 tasks.getByName(copyGeneratedFilesAndroidTask)
                     .dependsOn("kspCommonMainKotlinMetadata")
 //                tasks.getByName(copyGeneratedFilesAndroidTask)
 //                    .finalizedBy(cleanAndroidGeneratedFiles)
+
+                val copyAndroidExampleGradle = "copyAndroidExampleGradle"
+                tasks.create(copyAndroidExampleGradle) {
+                    copy {
+                        from("${baseDir}/gradle/")
+                        into("$reactNativeDir/example/android/gradle/")
+                    }
+
+                    copy {
+                        from("${baseDir}/local.properties")
+                        into("${reactNativeDir}/example/android/")
+                    }
+                }
 
                 // iOS tasks
                 tasks.getByName(copyGeneratedFilesIosTask)
@@ -229,11 +285,53 @@ class KmpPlugin : Plugin<Project> {
                 tasks.getByName(copyGeneratedFilesJsTask)
                     .dependsOn("kspCommonMainKotlinMetadata")
 
+                // Workaround to support gradle 8 and java 17 with kotlin 1.8
+                val reactNativeGradle8Workaround = "reactNativeGradle8Workaround"
+                tasks.create(reactNativeGradle8Workaround) {
+                    listOf(
+                        rootDir.resolve(
+                            "${baseDir}/react-native-${
+                                projectPackageName.replace(
+                                    ".",
+                                    "-"
+                                )
+                            }/example/node_modules/react-native-gradle-plugin/build.gradle.kts"
+                        ),
+                        rootDir.resolve(
+                            "${baseDir}/react-native-${
+                                projectPackageName.replace(
+                                    ".",
+                                    "-"
+                                )
+                            }/node_modules/react-native-gradle-plugin/build.gradle.kts"
+                        )
+                    ).forEach { f ->
+                        if (f.exists()) {
+                            log("Applying $reactNativeGradle8Workaround on: ")
+                            val content = f.readText()
+                                .replace(
+                                    """kotlin("jvm") version "1.6.10"""",
+                                    """kotlin("jvm") version "1.8.21""""
+                                ).replace(
+                                    "JavaVersion.VERSION_11",
+                                    "JavaVersion.VERSION_17"
+                                ).replace(
+                                    "JavaVersion.VERSION_1_8",
+                                    "JavaVersion.VERSION_17"
+                                )
+                            f.writeText(content)
+                        }
+                    }
+                }
+
                 dependsOnTasks.forEach {
                     tasks.findByName(it)?.dependsOn(cleanAndroidGeneratedFiles)
+                    tasks.findByName(it)?.dependsOn(copyAndroidExampleGradle)
                     tasks.findByName(it)?.dependsOn(copyGeneratedFilesAndroidTask)
                     tasks.findByName(it)?.dependsOn(copyGeneratedFilesIosTask)
                     tasks.findByName(it)?.dependsOn(copyGeneratedFilesJsTask)
+                    if (!teleresoKmp.disableReactNativeGradle8Workaround)
+                        tasks.findByName(it)?.dependsOn(reactNativeGradle8Workaround)
                 }
             }
         }

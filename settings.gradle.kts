@@ -1,12 +1,13 @@
+val teleresoKmpCatalog: String by settings
+
 pluginManagement {
-    val kspVersion: String by settings
     plugins {
-        id("com.google.devtools.ksp") version kspVersion apply false
     }
     repositories {
         google()
         gradlePluginPortal()
         mavenCentral()
+        maven { url = uri("https://s01.oss.sonatype.org/content/groups/staging") }
         maven { url = uri("https://repo.spring.io/milestone") }
         maven { url = uri("https://repo.spring.io/snapshot") }
     }
@@ -14,8 +15,16 @@ pluginManagement {
 
 dependencyResolutionManagement {
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
+        maven { url = uri("https://s01.oss.sonatype.org/content/groups/staging") }
+    }
+    versionCatalogs {
+        create("kmpLibs") {
+            from("io.telereso.kmp:catalog:$teleresoKmpCatalog")
+            version("teleresoKmp", "0.0.1-local")
+        }
     }
 }
 rootProject.name = "kmp-annotations"

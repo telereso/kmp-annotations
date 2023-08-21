@@ -1,7 +1,6 @@
 plugins {
-  kotlin("multiplatform")
-  id("com.android.library")
-  id("com.google.devtools.ksp")
+  alias(kmpLibs.plugins.kotlin.multiplatform)
+  alias(kmpLibs.plugins.android.library)
   id("maven-publish")
   id("convention.publication")
 }
@@ -86,12 +85,81 @@ kotlin {
 
 android {
   namespace = "io.telereso.kmp.annotations"
-  compileSdk = 32
+  compileSdk = kmpLibs.versions.compileSdk.get().toInt()
   buildFeatures {
     buildConfig = false
   }
   defaultConfig {
-    minSdk = 21
-    targetSdk = 32
+    minSdk = kmpLibs.versions.minSdk.get().toInt()
+  }
+  compileOptions {
+    sourceCompatibility = JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
+    targetCompatibility = JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
   }
 }
+
+//////////////////// TODO remove this section with kotlin 1.9.0 ////////////////////
+tasks.getByName("jsNodeProductionLibraryPrepare").dependsOn("jsProductionExecutableCompileSync")
+tasks.getByName("jsBrowserProductionLibraryPrepare").dependsOn("jsProductionExecutableCompileSync")
+tasks.getByName("jsBrowserProductionWebpack").dependsOn("jsProductionLibraryCompileSync")
+
+tasks.getByName("signIosSimulatorArm64Publication")
+  .dependsOn("publishIosArm64PublicationToMavenLocal")
+  .dependsOn("publishIosArm64PublicationToSonatypeRepository")
+
+tasks.getByName("signIosX64Publication")
+  .dependsOn("publishIosArm64PublicationToMavenLocal")
+  .dependsOn("publishIosSimulatorArm64PublicationToMavenLocal")
+  .dependsOn("publishIosSimulatorArm64PublicationToSonatypeRepository")
+
+tasks.getByName("signJsPublication")
+  .dependsOn("publishIosArm64PublicationToMavenLocal")
+  .dependsOn("publishIosSimulatorArm64PublicationToMavenLocal")
+  .dependsOn("publishIosX64PublicationToMavenLocal")
+  .dependsOn("publishIosX64PublicationToSonatypeRepository")
+
+tasks.getByName("signJvmPublication")
+  .dependsOn("publishIosArm64PublicationToMavenLocal")
+  .dependsOn("publishIosSimulatorArm64PublicationToMavenLocal")
+  .dependsOn("publishIosX64PublicationToMavenLocal")
+  .dependsOn("publishJsPublicationToMavenLocal")
+  .dependsOn("publishJsPublicationToSonatypeRepository")
+
+tasks.getByName("signKotlinMultiplatformPublication")
+  .dependsOn("publishIosArm64PublicationToMavenLocal")
+  .dependsOn("publishIosSimulatorArm64PublicationToMavenLocal")
+  .dependsOn("publishIosX64PublicationToMavenLocal")
+  .dependsOn("publishJsPublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToSonatypeRepository")
+
+tasks.getByName("signWatchosArm32Publication")
+  .dependsOn("publishIosSimulatorArm64PublicationToMavenLocal")
+  .dependsOn("publishIosX64PublicationToMavenLocal")
+  .dependsOn("publishJsPublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToMavenLocal")
+  .dependsOn("publishKotlinMultiplatformPublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToSonatypeRepository")
+  .dependsOn("publishKotlinMultiplatformPublicationToSonatypeRepository")
+
+tasks.getByName("signWatchosArm64Publication")
+  .dependsOn("publishIosX64PublicationToMavenLocal")
+  .dependsOn("publishJsPublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToMavenLocal")
+  .dependsOn("publishKotlinMultiplatformPublicationToMavenLocal")
+  .dependsOn("publishWatchosArm32PublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToSonatypeRepository")
+  .dependsOn("publishWatchosArm32PublicationToSonatypeRepository")
+
+tasks.getByName("signWatchosSimulatorArm64Publication")
+  .dependsOn("publishIosX64PublicationToMavenLocal")
+  .dependsOn("publishJsPublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToMavenLocal")
+  .dependsOn("publishKotlinMultiplatformPublicationToMavenLocal")
+  .dependsOn("publishWatchosArm32PublicationToMavenLocal")
+  .dependsOn("publishWatchosArm64PublicationToMavenLocal")
+  .dependsOn("publishJvmPublicationToSonatypeRepository")
+  .dependsOn("publishWatchosArm32PublicationToSonatypeRepository")
+  .dependsOn("publishWatchosArm64PublicationToSonatypeRepository")
+
+//////////////////////////////////////////////////////////////////////////////////////////

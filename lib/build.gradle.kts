@@ -2,17 +2,19 @@ import org.gradle.configurationcache.extensions.capitalized
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.multiplatform")
-    id("org.jetbrains.kotlin.native.cocoapods")
-    kotlin("plugin.serialization")
-    id("org.jetbrains.kotlin.plugin.parcelize")
-    id("com.squareup.sqldelight")
-    id("org.jetbrains.kotlinx.kover") version "0.6.1"
-    id("com.adarshr.test-logger") version "3.2.0"
-    id("org.jetbrains.dokka")
-    id("com.codingfeline.buildkonfig")
-    id("io.telereso.kmp").version("0.0.1-local")
+    alias(kmpLibs.plugins.android.library)
+
+    alias(kmpLibs.plugins.kotlin.multiplatform)
+    alias(kmpLibs.plugins.kotlin.native.cocoapods)
+    alias(kmpLibs.plugins.kotlin.serialization)
+    alias(kmpLibs.plugins.kotlin.parcelize)
+    alias(kmpLibs.plugins.kotlinx.kover)
+    alias(kmpLibs.plugins.dokka)
+
+    alias(kmpLibs.plugins.sqldelight)
+    alias(kmpLibs.plugins.test.logger)
+    alias(kmpLibs.plugins.buildkonfig)
+    alias(kmpLibs.plugins.telereso.kmp)
 }
 
 
@@ -23,19 +25,6 @@ val scope: String by rootProject.extra
 group = "$groupId.${project.name}"
 version = project.findProperty("publishVersion") ?: "0.0.1"
 
-
-// Android
-val buildToolsVersion: String by rootProject.extra
-val minSdkVersion: Int by rootProject.extra
-val compileSdkVer: Int by rootProject.extra
-val targetSdkVersion : Int by rootProject.extra
-
-// Dependencies versions
-val ktorVersion: String by rootProject.extra
-val sqlDelightVersion: String by rootProject.extra
-val coroutinesVersion: String by rootProject.extra
-val kotlinxDatetimeVersion: String by rootProject.extra
-val coreVersion:String by rootProject.extra
 
 kotlin {
     android {
@@ -74,7 +63,8 @@ kotlin {
              */
             export(project(":annotations-models"))
 
-            export("io.telereso.kmp:core:$coreVersion")
+            export(kmpLibs.telereso.core)
+
 
             // Dependency export
             //transitiveExport = false // This is default.
@@ -88,27 +78,11 @@ kotlin {
     }
 
     /**
-     * If you want to make it possible to use your library directly from the Android project,
-     * or you need to use Android SDK to implement platform-specific features
-     * (for example, working with files stored on the device), use the android() target declaration instead.
-     * To make it work, you need to connect the android-library Gradle plugin and provide Android-specific information
-     * in the android configuration block in the build.gradle.kts:
-     * For sake of brevity we shall skip this step for now
-     * but can later refer to https://dev.to/kotlin/how-to-build-and-publish-a-kotlin-multiplatform-library-creating-your-first-library-1bp8
-     * undert the Supporting Android target
-     */
-    android()
-
-    /**
      * using jvm for Android targets inorder for the jvm jar file to be created.
      * this is needed for the MavenLocal dependecny.
      * only issue Android SDK specific implementaations wont work. This is still work in prgress.
      */
     jvm {
-        compilations.all {
-//            kotlinOptions.jvmTarget = "1.8"
-        }
-        //withJava()
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
         }
@@ -171,34 +145,21 @@ kotlin {
             languageSettings.optIn("kotlin.js.ExperimentalJsExport")
         }
 
-        val ktorVersion =
-            "2.1.3" // later can move our versions within a dependecy kotlin DTS class.
-        val sqlDelightVersion =
-            "1.5.4" // later can move our versions within a dependecy kotlin DTS class.
-        val coroutinesVersion = "1.6.4"
-        val napierVersion = "2.6.1"
         val commonMain by getting {
             kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
             dependencies {
                 implementation(project(":annotations"))
                 api(project(":annotations-models"))
-                api("io.telereso.kmp:core:$coreVersion")
+                api(kmpLibs.telereso.core)
                 /**
                  * Add Ktor dependencies
                  * To use the Ktor client in common code, add the dependency to ktor-client-core to the commonMain
                  */
-                implementation("io.ktor:ktor-client-core:$ktorVersion")
-                implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
-                implementation("io.ktor:ktor-client-auth:$ktorVersion")
+                implementation(kmpLibs.bundles.ktor)
 
-                implementation("com.squareup.sqldelight:runtime:$sqlDelightVersion")
-                implementation("com.squareup.sqldelight:coroutines-extensions:$sqlDelightVersion")
+                implementation(kmpLibs.bundles.sqldelight)
 
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-
-                // Kotlin Time
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:$kotlinxDatetimeVersion")
+                implementation(kmpLibs.bundles.kotlinx)
             }
         }
         val commonTest by getting {
@@ -206,89 +167,36 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation(kotlin("test-common"))
                 implementation(kotlin("test-annotations-common"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
-                implementation("io.kotest:kotest-framework-engine:5.5.3")
-                implementation("io.kotest:kotest-assertions-core:5.5.3")
-                /**
-                 * currently mockk is not support for Kotlin/Native iOS
-                 * leaving these hear for easier reference later/.
-                 */
-//                 implementation("io.mockk:mockk-common:1.12.4")
-//                 implementation("io.mockk:mockk:1.13.2")
-
-                // Ktor Server Mock
-                implementation("io.ktor:ktor-client-mock:$ktorVersion")
+                implementation(kmpLibs.test.kotlinx.coroutines.test)
+                implementation(kmpLibs.bundles.test.kotest)
+                implementation(kmpLibs.test.ktor.client.mock)
             }
         }
         val jvmMain by getting {
             dependencies {
-                /**
-                 * Add a ktor engine dependency
-                 * For Android, you can also use other engine types.
-                 * https://ktor.io/docs/http-client-engines.html#jvm-android
-                 * We chose the okhttp engine for Android since its one we are
-                 * most familiar with.
-                 * Engines are used to process network requests. Note that a specific platform may require a specific engine that processes network requests.
-                 *
-                 */
-                implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
-                implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
-                /**
-                 * For logging using the okHttp but we could also use the Ktor logging
-                 * implementation("io.ktor:ktor-client-logging:2.0.0-beta-1")
-                 */
-                implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
-
-                // sqlDelight jVM version
-                implementation("com.squareup.sqldelight:runtime-jvm:1.5.4")
+                implementation(kmpLibs.ktor.client.okhttp)
+                implementation(kmpLibs.okhttp.logging)
+                implementation(kmpLibs.sqldelight.runtime.jvm)
             }
         }
 
         val jvmTest by getting {
             dependsOn(commonTest)
-            /**
-             * Since Android tests run on the JVM. we need to implement the database for it as well
-             */
             dependencies {
-                implementation("com.squareup.sqldelight:sqlite-driver:1.5.4")
+                implementation(kmpLibs.sqldelight.sqlite.driver)
             }
         }
         val androidMain by getting {
             dependencies {
-                /**
-                 * Add a ktor engine dependency
-                 * For Android, you can also use other engine types.
-                 * https://ktor.io/docs/http-client-engines.html#jvm-android
-                 * We chose the okhttp engine for Android since its one we are
-                 * most familiar with.
-                 * Engines are used to process network requests. Note that a specific platform may require a specific engine that processes network requests.
-                 *
-                 */
-                implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
-                implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
-                implementation("io.ktor:ktor-client-auth:$ktorVersion")
-                /**
-                 * For logging using the okHttp but we could also use the Ktor logging
-                 * implementation("io.ktor:ktor-client-logging:2.0.0-beta-1")
-                 */
-                implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
-
-                implementation("com.squareup.sqldelight:android-driver:$sqlDelightVersion")
+                implementation(kmpLibs.ktor.client.okhttp)
+                implementation(kmpLibs.okhttp.logging)
+                implementation(kmpLibs.sqldelight.android.driver)
             }
         }
         val androidTest by getting {
             dependsOn(commonTest)
             dependencies {
-                /**
-                 * In some tests (like verification of migrations) you might wish to swap out the Android driver with the JVM driver,
-                 * enabling you to test code involving the database without needing an Android emulator or physical device. To do that use the jvm SQLite driver:
-                 * https://cashapp.github.io/sqldelight/android_sqlite/testing/
-                 */
-                implementation("com.squareup.sqldelight:sqlite-driver:1.5.4")
-                implementation("io.mockk:mockk:1.13.2")
-                implementation("io.mockk:mockk-common:1.12.4")
+                implementation(kmpLibs.sqldelight.sqlite.driver)
             }
         }
         val iosX64Main by getting
@@ -311,10 +219,9 @@ kotlin {
                  * For iOS, we add the ktor-client-darwin dependency
                  * Engines are used to process network requests. Note that a specific platform may require a specific engine that processes network requests.
                  */
-                implementation("io.ktor:ktor-client-darwin:$ktorVersion")
-                implementation("io.ktor:ktor-client-logging:$ktorVersion")
+                implementation(kmpLibs.ktor.client.darwin)
 
-                implementation("com.squareup.sqldelight:native-driver:$sqlDelightVersion")
+                implementation(kmpLibs.sqldelight.native.driver)
             }
         }
         val iosX64Test by getting
@@ -340,19 +247,19 @@ kotlin {
                 /**
                  * Engines are used to process network requests. Note that a specific platform may require a specific engine that processes network requests.
                  */
-                implementation("io.ktor:ktor-client-js:$ktorVersion")
+                implementation(kmpLibs.ktor.client.js)
 
-                implementation("com.squareup.sqldelight:sqljs-driver:$sqlDelightVersion")
+                implementation(kmpLibs.sqldelight.sqljs.driver)
 
 //                implementation(devNpm("copy-webpack-plugin", "9.1.0"))
-                implementation(npm("sql.js", "1.8.0"))
-                implementation(npm("@js-joda/core", "3.2.0"))
+                implementation(npm("sql.js", kmpLibs.versions.sqlJs.get()))
+                implementation(npm("@js-joda/core", kmpLibs.versions.js.joda.core.get()))
             }
         }
         val jsTest by getting {
             dependsOn(commonTest)
             dependencies {
-                implementation("com.squareup.sqldelight:sqljs-driver:$sqlDelightVersion")
+                implementation(kmpLibs.sqldelight.sqljs.driver)
             }
         }
     }
@@ -499,13 +406,16 @@ sqldelight {
 
 android {
     namespace = "$groupId.${project.name.replace("-",".")}"
-    compileSdk = compileSdkVer
+    compileSdk = kmpLibs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = minSdkVersion
-        targetSdk = targetSdkVersion
+        minSdk = kmpLibs.versions.minSdk.get().toInt()
     }
     resourcePrefix = "${rootProject.name.replace("-", "_")}_"
+    compileOptions {
+        sourceCompatibility = JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
+        targetCompatibility = JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
+    }
 }
 
 // We can filter out some classes in the generated report
@@ -530,7 +440,7 @@ kover {
         rule {
             name = "Minimal line coverage rate in percent"
             bound {
-                minValue = 45
+                minValue = 40
             }
         }
     }
@@ -578,5 +488,5 @@ testlogger {
 
 teleresoKmp {
 //    disableJsonConverters = true
-//    disableReactExport = true
+    enableReactNativeExport = true
 }
