@@ -139,11 +139,15 @@ class KmpPlugin : Plugin<Project> {
             tasks.findByName("iosX64SourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("iosSimulatorArm64SourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("jvmSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
-            tasks.findByName("dokkaHtml")?.dependsOn("transformIosMainCInteropDependenciesMetadataForIde")
-            if(name.endsWith("-client"))
-                tasks.findByName("dokkaHtml")?.dependsOn(":${name.replace("-client","-models")}:transformIosMainCInteropDependenciesMetadataForIde")
-            if(name.endsWith("-models"))
-                tasks.findByName("dokkaHtml")?.dependsOn(":${name.replace("-models","-client")}:transformIosMainCInteropDependenciesMetadataForIde")
+
+            tasks.findByName("transformIosMainCInteropDependenciesMetadataForIde")?.let {
+                tasks.findByName("dokkaHtml")?.dependsOn(it.name)
+                if(name.endsWith("-client"))
+                    tasks.findByName("dokkaHtml")?.dependsOn(":${name.replace("-client","-models")}:${it.name}")
+                if(name.endsWith("-models"))
+                    tasks.findByName("dokkaHtml")?.dependsOn(":${name.replace("-models","-client")}:${it.name}")
+            }
+
 
             // TODO remove these when upgrading to kotlin 1.9.0
             tasks.findByName("jsNodeProductionLibraryPrepare")
