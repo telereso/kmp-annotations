@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace 'io.telereso.annotations.client.app'
-    compileSdk 32
+    compileSdk kmpLibs.versions.compileSdk.get().toInteger()
 
     defaultConfig {
         applicationId "io.telereso.annotations.client.app"
         minSdk 26
-        targetSdk 32
+        targetSdk kmpLibs.versions.compileSdk.get().toInteger()
         versionCode 1
         versionName "1.0"
 

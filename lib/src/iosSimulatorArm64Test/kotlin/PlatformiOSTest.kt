@@ -12,6 +12,7 @@ import platform.Foundation.NSBundle
 
 private var dbIndex = 0
 
+@OptIn(ExperimentalForeignApi::class)
 actual class Resource actual constructor(actual val name: String) {
     val pathParts = name.split("[.|/]".toRegex())
     val path = NSBundle.mainBundle.pathForResource("resources/${pathParts[0]}", pathParts[1])

@@ -1,7 +1,7 @@
 buildscript {
   // Buildscript is evaluated before everything else so we can't use getExtOrDefault
   ext {
-    kotlinVersion = "1.8.21"
+    kotlinVersion = "1.9.10"
   }
   repositories {
       google()

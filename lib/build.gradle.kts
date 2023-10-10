@@ -27,7 +27,7 @@ version = project.findProperty("publishVersion") ?: "0.0.1"
 
 
 kotlin {
-    android {
+    androidTarget {
         publishLibraryVariants("release")
     }
     iosX64()
@@ -94,41 +94,18 @@ kotlin {
      *
      */
     js(IR) {
-        moduleName = "annotations-client"
+        moduleName = "@$scope/${project.name}"
+        version = project.version as String
 
-        compilations["main"].packageJson {
-            name = "@$scope/$moduleName"
-            version = project.version as String
-            customField("buildTimeStamp", "${System.currentTimeMillis()}")
-        }
-
-        /**
-         * browser()
-         * It sets the JavaScript target execution environment as browser.
-         * It provides a Gradle task—jsBrowserTest that runs all js tests inside the browser using karma and webpack.
-         */
         browser {
             testTask {
                 useMocha()
             }
         }
-        /**
-         * nodejs()
-         * It sets the JavaScript target execution environment as nodejs.
-         * It provides a Gradle task—jsNodeTest that runs all js tests inside nodejs using the built-in test framework.
-         */
+
         nodejs()
-        /**
-         * binaries.library()
-         * It tells the Kotlin compiler to produce Kotlin/JS code as a distributable node library.
-         * Depending on which target you've used along with this,
-         * you would get Gradle tasks to generate library distribution files
-         */
+
         binaries.library()
-        /**
-         * binaries.executable()
-         * it tells the Kotlin compiler to produce Kotlin/JS code as webpack executable .js files.
-         */
         binaries.executable()
     }
 
@@ -193,7 +170,7 @@ kotlin {
                 implementation(kmpLibs.sqldelight.android.driver)
             }
         }
-        val androidTest by getting {
+        val androidUnitTest by getting {
             dependsOn(commonTest)
             dependencies {
                 implementation(kmpLibs.sqldelight.sqlite.driver)
@@ -389,7 +366,7 @@ tasks.named(
     "iosSimulatorArm64Test",
     org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest::class.java
 ).configure {
-    deviceId = "iPhone 14 Pro"
+    device.set(kmpLibs.versions.test.iphone.device.get())
 }
 
 sqldelight {

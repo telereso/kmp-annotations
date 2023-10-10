@@ -3,9 +3,21 @@ import java.util.*
 plugins {
     `kotlin-dsl` // Is needed to turn our build logic written in Kotlin into Gralde Plugin
     `java-gradle-plugin`
-    id("com.google.devtools.ksp") version "1.8.21-1.0.11"
-    id("com.gradle.plugin-publish") version "1.2.0"
+    alias(kmpLibs.plugins.ksp)
+    id("com.gradle.plugin-publish") version "1.2.1"
     signing
+}
+
+buildscript {
+
+    repositories {
+        google()
+        gradlePluginPortal()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kmpLibs.versions.kotlin.get()}")
+    }
 }
 
 
@@ -65,5 +77,5 @@ publishing {
 
 
 dependencies {
-    implementation("com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:1.8.21-1.0.11")
+    implementation("com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:${kmpLibs.versions.ksp.get()}")
 }

@@ -15,15 +15,6 @@
     "@jridgewell/gen-mapping" "^0.1.0"
     "@jridgewell/trace-mapping" "^0.3.9"
 
-"@annotations/annotations-client@file:../lib/build/productionLibrary":
-  version "0.0.1"
-  dependencies:
-    "@js-joda/core" "3.2.0"
-    abort-controller "3.0.0"
-    node-fetch "2.6.7"
-    sql.js "1.8.0"
-    ws "8.5.0"
-
 "@apideck/better-ajv-errors@^0.3.1":
   version "0.3.6"
   resolved "https://registry.yarnpkg.com/@apideck/better-ajv-errors/-/better-ajv-errors-0.3.6.tgz#957d4c28e886a64a8141f7522783be65733ff097"
@@ -1787,11 +1778,12 @@
     "@svgr/plugin-svgo" "^5.5.0"
     loader-utils "^2.0.0"
 
-"@telereso/annotations-client@file:../lib/build/productionLibrary":
+"@telereso/annotations-client@file:../lib/build/dist/js/productionLibrary":
   version "0.0.1"
   dependencies:
     "@js-joda/core" "3.2.0"
     abort-controller "3.0.0"
+    format-util "^1.0.5"
     node-fetch "2.6.7"
     sql.js "1.8.0"
     ws "8.5.0"
@@ -2535,11 +2527,12 @@ ajv@^8.0.0, ajv@^8.6.0, ajv@^8.8.0:
     require-from-string "^2.0.2"
     uri-js "^4.2.2"
 
-"annotations-client@file:../lib/build/productionLibrary":
+"annotations-client@file:../lib/build/dist/js/productionLibrary":
   version "0.0.1"
   dependencies:
     "@js-joda/core" "3.2.0"
     abort-controller "3.0.0"
+    format-util "^1.0.5"
     node-fetch "2.6.7"
     sql.js "1.8.0"
     ws "8.5.0"
@@ -4599,6 +4592,11 @@ form-data@^3.0.0:
     asynckit "^0.4.0"
     combined-stream "^1.0.8"
     mime-types "^2.1.12"
+
+format-util@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/format-util/-/format-util-1.0.5.tgz#1ffb450c8a03e7bccffe40643180918cc297d271"
+  integrity sha512-varLbTj0e0yVyRpqQhuWV+8hlePAgaoFRhNFj50BNjEIrw1/DphHSObtqwskVCPWNgzwPoQrZAbfa/SBiicNeg==
 
 forwarded@0.2.0:
   version "0.2.0"

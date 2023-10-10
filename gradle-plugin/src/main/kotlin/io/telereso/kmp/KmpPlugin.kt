@@ -101,7 +101,7 @@ class KmpPlugin : Plugin<Project> {
             val jsCleanLibraryDistributionTask = "jsCleanLibraryDistribution"
             tasks.create<Delete>(jsCleanLibraryDistributionTask) {
                 group = "Clean"
-                delete(buildDir.resolve("productionLibrary"))
+                delete(buildDir.resolve("dist/js/productionLibrary"))
             }
 
             tasks.findByName("compileKotlinJs")?.apply {
@@ -134,22 +134,13 @@ class KmpPlugin : Plugin<Project> {
             tasks.findByName("compileKotlinJs")?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("jsSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("iosArm64SourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
-            tasks.findByName("androidReleaseSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("sourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("iosX64SourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("iosSimulatorArm64SourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("jvmSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
 
-            tasks.findByName("transformIosMainCInteropDependenciesMetadataForIde")?.let {
-                tasks.findByName("dokkaHtml")?.dependsOn(it.name)
-                if(name.endsWith("-client"))
-                    tasks.findByName("dokkaHtml")?.dependsOn(":${name.replace("-client","-models")}:${it.name}")
-                if(name.endsWith("-models"))
-                    tasks.findByName("dokkaHtml")?.dependsOn(":${name.replace("-models","-client")}:${it.name}")
-            }
+//            handleGradle8DokkaTasks()
 
-
-            // TODO remove these when upgrading to kotlin 1.9.0
             tasks.findByName("jsNodeProductionLibraryPrepare")
                 ?.dependsOn("jsProductionExecutableCompileSync")
             tasks.findByName("jsBrowserProductionLibraryPrepare")
@@ -315,7 +306,7 @@ class KmpPlugin : Plugin<Project> {
                             val content = f.readText()
                                 .replace(
                                     """kotlin("jvm") version "1.6.10"""",
-                                    """kotlin("jvm") version "1.8.21""""
+                                    """kotlin("jvm") version "1.9.10""""
                                 ).replace(
                                     "JavaVersion.VERSION_11",
                                     "JavaVersion.VERSION_17"
@@ -338,6 +329,53 @@ class KmpPlugin : Plugin<Project> {
                         tasks.findByName(it)?.dependsOn(reactNativeGradle8Workaround)
                 }
             }
+        }
+
+        gradle.projectsEvaluated {
+            tasks.findByName("androidReleaseSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
+        }
+    }
+
+    private fun Project.handleGradle8DokkaTasks() {
+        val transformIosMainTask = "transformIosMainCInteropDependenciesMetadataForIde"
+        tasks.findByName(transformIosMainTask)?.let {
+            tasks.findByName("dokkaHtml")?.dependsOn(it.name)
+        }
+
+        if (name.endsWith("-models")) {
+            val dokkaHtmlTask = rootProject.subprojects.firstOrNull { it.name == name }?.let { p ->
+                p.tasks.findByName("dokkaHtml")?.let { t ->
+                    log("found task :${p.name}:${t.name}")
+                    t
+                }
+            }
+
+            rootProject.subprojects.firstOrNull { it.name == name.replace("-models", "-client") }
+                ?.let { p ->
+                    p.tasks.getByName(transformIosMainTask)?.let { t ->
+                        log("found task :${p.name}:${t.name}")
+                        dokkaHtmlTask?.dependsOn(t)
+                    }
+                }
+        }
+
+        if (name.endsWith("-client")) {
+            val dokkaHtmlTask = rootProject.subprojects.firstOrNull { it.name == name }?.let { p ->
+                p.tasks.findByName("dokkaHtml")?.let { t ->
+                    log("found task :${p.name}:${t.name}")
+                    t
+                }
+            }
+
+            rootProject.subprojects.firstOrNull { it.name == name.replace("-client", "-models") }
+                ?.let { p ->
+                    log("found project :${p.name} ${p.tasks.joinToString { it.name }}")
+
+                    p.tasks.findByName(transformIosMainTask)?.let { t ->
+                        log("found task :${p.name}:${t.name}")
+                        dokkaHtmlTask?.dependsOn(t)
+                    }
+                }
         }
     }
 }
