@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
+    alias(kmpLibs.plugins.kotlin.jvm) apply false
     alias(kmpLibs.plugins.kotlin.multiplatform) apply false
     alias(kmpLibs.plugins.android.library) apply false
     alias(kmpLibs.plugins.kotlin.native.cocoapods) apply false
@@ -40,8 +41,8 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.21")
-        classpath("com.android.tools.build:gradle:8.0.2")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kmpLibs.versions.kotlin.get()}")
+        classpath("com.android.tools.build:gradle:${kmpLibs.versions.androidGradlePlugin.get()}")
     }
 }
 

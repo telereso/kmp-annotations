@@ -19,7 +19,7 @@ version = project.findProperty("publishVersion") ?: "0.0.1"
 
 
 kotlin {
-    android {
+    androidTarget {
         publishLibraryVariants("release")
     }
     iosX64()
@@ -34,13 +34,9 @@ kotlin {
 
 
     js(IR) {
-        moduleName = project.name
+        moduleName = "@$scope/${project.name}"
+        version = project.version as String
 
-        compilations["main"].packageJson {
-            name = "@$scope/$moduleName"
-            version = project.version as String
-            customField("buildTimeStamp", "${System.currentTimeMillis()}")
-        }
         browser()
         nodejs()
         binaries.library()
@@ -68,7 +64,7 @@ kotlin {
         }
 
         val androidMain by getting
-        val androidTest by getting
+        val androidUnitTest by getting
         val iosX64Main by getting
         val iosArm64Main by getting
         val iosSimulatorArm64Main by getting
