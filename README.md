@@ -1,4 +1,5 @@
-# KMP Annotations 
+# KMP Annotations
+![kotlin: 1.9.10](https://img.shields.io/badge/kotlin-1.9.10-blue?logo=kotlin)
 
 A kotlin multiplatform (kmp) annotations to auto generate code to support and speed up building KMP SDKs, 
 

@@ -396,11 +396,10 @@ android {
 }
 
 // We can filter out some classes in the generated report
-kover {
+koverReport {
     filters {
-        classes {
-            //includes += listOf("*.*ViewModelImpl*", "$groupId..cache.*")
-            //excludes += listOf("*.*Genre*", "$groupId..cache.*")
+        excludes {
+            classes(listOf())
         }
     }
     // The koverVerify currently only supports line counter values.
@@ -408,14 +407,12 @@ kover {
     verify {
         // Add VMs in the includes [list]. VMs added,their coverage % will be tracked.
         filters {
-            classes {
-                //includes += listOf("*.*ViewModelImpl*", "$groupId..cache.*")
-                //excludes += listOf("*.*Genre*", "$groupId..cache.*")
+            excludes {
+                classes(listOf())
             }
         }
         // Enforce Test Coverage
-        rule {
-            name = "Minimal line coverage rate in percent"
+        rule("Minimal line coverage rate in percent") {
             bound {
                 minValue = 40
             }
