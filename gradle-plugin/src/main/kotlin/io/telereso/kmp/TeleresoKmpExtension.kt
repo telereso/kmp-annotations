@@ -27,6 +27,7 @@ package io.telereso.kmp
 
 import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
+import java.io.File
 import javax.inject.Inject
 
 
@@ -52,6 +53,7 @@ open class TeleresoKmpExtension @Inject constructor(
      * set to true to start using [JvmOverloads] as a SwiftOverloads annotation , to avoid updating all models in old project
      */
     var swiftOverloadsByJvmOverloads: Boolean = false
+
     /**
      * in case of naming conflict or project's conventional naming you can change the name of function factory that create the object,
      * By default it s as following
@@ -68,6 +70,40 @@ open class TeleresoKmpExtension @Inject constructor(
      */
     var createObjectFunctionName: String = "`object`"
 
+    var umbrellaFrameworkName: String? = null
+
+    var nodeModulesDirectory: File? = null
+
+    var reactNativePackageDirectory: File? = null
+
+    var removeStringErrorExtension: Boolean = true
+
+    internal val exportedReactNativePackages = mutableListOf<ReactNativePackage>()
+
+
+    fun rnp(name: String): ReactNativePackage {
+        return ReactNativePackage(null, name)
+    }
+
+    fun framework(name: String): String {
+        return name
+    }
+
+    fun rnp(name: String, framework: () -> String): ReactNativePackage {
+        return ReactNativePackage(null, name, framework())
+    }
+
+    fun rnp(scope: String, name: String): ReactNativePackage {
+        return ReactNativePackage(scope, name)
+    }
+
+    fun rnp(scope: String, name: String, framework: String): ReactNativePackage {
+        return ReactNativePackage(scope, name, framework)
+    }
+
+    fun export(reactNativePackage: ReactNativePackage) {
+        exportedReactNativePackages.add(reactNativePackage)
+    }
 
     companion object {
         fun Project.teleresoKmp(): TeleresoKmpExtension {

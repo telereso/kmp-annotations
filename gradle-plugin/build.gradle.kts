@@ -78,4 +78,5 @@ publishing {
 
 dependencies {
     implementation("com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:${kmpLibs.versions.ksp.get()}")
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:${kmpLibs.versions.kotlin.get()}")
 }

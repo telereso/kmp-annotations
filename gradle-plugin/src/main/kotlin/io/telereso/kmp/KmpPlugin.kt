@@ -34,6 +34,8 @@ import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.extra
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.cocoapods.CocoapodsExtension
 import java.io.File
 import java.util.*
 import kotlin.jvm.optionals.getOrNull
@@ -86,6 +88,16 @@ class KmpPlugin : Plugin<Project> {
 
         val teleresoKmp = teleresoKmp()
 
+
+        fun includeGeneratedClassesToSrcSet(kotlinMultiplatformExtension: KotlinMultiplatformExtension?) {
+            kotlinMultiplatformExtension
+                ?.sourceSets
+                ?.findByName("commonMain")
+                ?.kotlin {
+                    srcDirs(buildDir.resolve("generated/ksp/metadata/commonMain/kotlin"))
+                }
+        }
+
         afterEvaluate {
             kspExtension.arg(
                 "swiftOverloadsByJvmOverloads",
@@ -93,7 +105,12 @@ class KmpPlugin : Plugin<Project> {
             )
             kspExtension.arg("createObjectFunctionName", teleresoKmp.createObjectFunctionName)
 
+            val kotlinMultiplatformExtension = project.extensions
+                .findByType(KotlinMultiplatformExtension::class.java)
 
+            if (teleresoKmp.enableReactNativeExport || !teleresoKmp.disableJsonConverters) {
+                includeGeneratedClassesToSrcSet(kotlinMultiplatformExtension)
+            }
 
             // Common tasks
 
@@ -122,7 +139,6 @@ class KmpPlugin : Plugin<Project> {
                 "allTests"
             )
 
-            // TODO remove these when upgrading to kotlin 1.9.0
             tasks.findByName("compileReleaseKotlinAndroid")
                 ?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("compileDebugKotlinAndroid")?.dependsOn("kspCommonMainKotlinMetadata")
@@ -148,45 +164,11 @@ class KmpPlugin : Plugin<Project> {
             tasks.findByName("jsBrowserProductionWebpack")
                 ?.dependsOn("jsProductionLibraryCompileSync")
 
-            // Models tasks
-
-//            val copyGeneratedModelsTask = "kspCommonMainKotlinMetadataCopyGeneratedModels"
-//            tasks.create<Copy>(copyGeneratedModelsTask) {
-//                log("Copying ksp generated models")
-//                group = "Ksp"
-//                from("build/generated/ksp/metadata/commonMain/resources/kotlin/")
-//                into("src/commonMain/kotlin/")
-//            }
-//
-//
-//            val cleanModelsGeneratedFilesTask = "kspCommonMainKotlinClean"
-//
-//            tasks.create<Delete>(cleanModelsGeneratedFilesTask) {
-//                group = "Clean"
-//                delete(fileTree("src").matching {
-//                    include("**/*.g.kt")
-//                })
-//            }
-
             if (teleresoKmp.disableJsonConverters) {
                 log("Skipping adding models tasks")
             } else {
                 log("Adding Models Tasks")
-
-//                tasks.findByName("clean")?.dependsOn(cleanModelsGeneratedFilesTask)
-
-//                tasks.getByName("kspCommonMainKotlinMetadata")
-//                    .dependsOn(cleanModelsGeneratedFilesTask)
-
-//                tasks.getByName("kspCommonMainKotlinMetadata")
-//                    .finalizedBy(copyGeneratedModelsTask)
-
-//                tasks.getByName(copyGeneratedModelsTask)
-//                    .dependsOn("kspCommonMainKotlinMetadata")
-
-//                dependsOnTasks.forEach{
-//                    tasks.findByName(it)?.dependsOn(copyGeneratedModelsTask)
-//                }
+                includeGeneratedClassesToSrcSet(kotlinMultiplatformExtension)
             }
 
 
@@ -319,12 +301,17 @@ class KmpPlugin : Plugin<Project> {
                     }
                 }
 
+                val copyReactNativeIosBridges = "copyReactNativeIosBridges"
+                val cocoapods = kotlinMultiplatformExtension?.getCocoapods()
+                exportReactNativePackages(copyReactNativeIosBridges, teleresoKmp, cocoapods)
+
                 dependsOnTasks.forEach {
                     tasks.findByName(it)?.dependsOn(cleanAndroidGeneratedFiles)
                     tasks.findByName(it)?.dependsOn(copyAndroidExampleGradle)
                     tasks.findByName(it)?.dependsOn(copyGeneratedFilesAndroidTask)
                     tasks.findByName(it)?.dependsOn(copyGeneratedFilesIosTask)
                     tasks.findByName(it)?.dependsOn(copyGeneratedFilesJsTask)
+                    tasks.findByName(it)?.dependsOn(copyReactNativeIosBridges)
                     if (!teleresoKmp.disableReactNativeGradle8Workaround)
                         tasks.findByName(it)?.dependsOn(reactNativeGradle8Workaround)
                 }
@@ -378,7 +365,134 @@ class KmpPlugin : Plugin<Project> {
                 }
         }
     }
+
+    private fun Project.exportReactNativePackages(
+        copyReactNativeIosBridgesTask: String,
+        teleresoKmp: TeleresoKmpExtension,
+        cocoapodsExtension: CocoapodsExtension?
+    ) {
+        log("Processing ReactNative packages: ${teleresoKmp.exportedReactNativePackages.joinToString { name }}")
+
+        var taskEnabled = teleresoKmp.exportedReactNativePackages.isNotEmpty()
+                && cocoapodsExtension != null
+                && !project.plugins.hasPlugin("com.android.application")
+
+        val rnpDir = teleresoKmp.reactNativePackageDirectory
+            ?: rootDir.resolve("react-native-${project.name}")
+        if (!rnpDir.exists()) {
+            log("React Native package not found!, set it using `reactNativePackageDirectory` or rename dir to `react-native-${project.name}`, caused by setting packages ${teleresoKmp.exportedReactNativePackages}")
+            taskEnabled = false
+        }
+
+
+        val frameworkName = teleresoKmp.umbrellaFrameworkName ?: cocoapodsExtension?.name
+
+        log("Detect frameworkName: $frameworkName, if not correct try setting `umbrellaFrameworkName`")
+
+        val nodeModulesDir =
+            teleresoKmp.nodeModulesDirectory ?: rnpDir.resolve("node_modules")
+
+        val exportedDir = rnpDir.resolve("ios/Exported")
+
+        tasks.create(copyReactNativeIosBridgesTask) {
+            enabled = taskEnabled
+            doFirst {
+                if (cocoapodsExtension == null) {
+                    log("Failed to locate CocoaPods for this project, make sure to implement it first before exporting packages")
+                }
+                if (exportedDir.exists()) exportedDir.deleteRecursively()
+                exportedDir.mkdir()
+
+                teleresoKmp.exportedReactNativePackages.forEach { rnp ->
+                    val rnpFolder = nodeModulesDir.resolve(rnp.path)
+                    if (!rnpFolder.exists()) throw RuntimeException("exported package not found $rnp at path $rnpFolder")
+
+                    val iosDir = nodeModulesDir.resolve(rnp.pathIos)
+
+                    val exportedPackageDir =
+                        exportedDir.resolve(rnp.name.removePrefix("react-native").toPascal())
+                    exportedPackageDir.mkdir()
+
+                    copy {
+                        from(iosDir.path)
+                        into(exportedPackageDir.path)
+                        eachFile {
+                            if (relativePath.segments.size > 1) {
+                                exclude()
+                            }
+                            if (path.contains(".xcodeproj")
+                                || path.contains(".xcworkspace")
+                                || (!name.endsWith(".h")
+                                        && !name.contains(".m")
+                                        && !name.contains(".swift"))
+                            ) {
+                                exclude()
+                            }
+                        }
+
+                    }
+                }
+            }
+
+            doLast {
+                project.fileTree(exportedDir).visit {
+                    if (isDirectory && file.listFiles().isEmpty()
+                        || file.name.endsWith(".xcodeproj")
+                        || file.name.endsWith(".xcworkspace")
+                    ) {
+                        file.deleteRecursively()
+                    }
+                }
+            }
+        }
+
+        val replaceImportedReactNativeFramework = "replaceImportedReactNativeFramework"
+        tasks.create(replaceImportedReactNativeFramework) {
+            enabled = taskEnabled
+            doLast {
+                project.fileTree(exportedDir).visit {
+                    if (file.name.endsWith(".swift")) {
+                        val extensionStringError = "extension String: Error"
+                        val privateExtensionStringError =
+                            "private extension String: Error"
+                        var content = file.readText()
+//                        if (!content.contains(privateExtensionStringError)) content =
+//                            content.replace(
+//                                extensionStringError, privateExtensionStringError
+//                            )
+
+                        if (teleresoKmp.removeStringErrorExtension)
+                            content = content.replace(
+                                "extension String: Error {\n}", ""
+                            )
+
+                        val detectedFrameworkName =
+                            """@objc\(([^)]+)\)""".toRegex().find(content)?.groups?.get(1)?.value
+
+                        teleresoKmp.exportedReactNativePackages.forEach { rnp ->
+                            (rnp.framework ?: detectedFrameworkName)?.let { oldFramework ->
+                                content = content.replace(
+                                    "import $oldFramework",
+                                    "import $frameworkName"
+                                )
+                            }
+                        }
+                        file.writeText(content)
+                    }
+                }
+            }
+        }
+
+        tasks.getByName(copyReactNativeIosBridgesTask)
+            .dependsOn("kspCommonMainKotlinMetadata")
+            .finalizedBy(replaceImportedReactNativeFramework)
+    }
 }
+
+private fun KotlinMultiplatformExtension.getCocoapods(): CocoapodsExtension? {
+    return (this as? org.gradle.api.plugins.ExtensionAware)?.extensions?.findByName("cocoapods") as? CocoapodsExtension
+}
+
 
 fun Project.getProjectName(): String {
     val extraKey = "projectPackageName"
