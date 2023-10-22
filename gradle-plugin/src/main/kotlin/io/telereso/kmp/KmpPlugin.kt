@@ -452,14 +452,7 @@ class KmpPlugin : Plugin<Project> {
             doLast {
                 project.fileTree(exportedDir).visit {
                     if (file.name.endsWith(".swift")) {
-                        val extensionStringError = "extension String: Error"
-                        val privateExtensionStringError =
-                            "private extension String: Error"
                         var content = file.readText()
-//                        if (!content.contains(privateExtensionStringError)) content =
-//                            content.replace(
-//                                extensionStringError, privateExtensionStringError
-//                            )
 
                         if (teleresoKmp.removeStringErrorExtension)
                             content = content.replace(
