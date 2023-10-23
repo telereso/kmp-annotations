@@ -301,9 +301,9 @@ class KmpPlugin : Plugin<Project> {
                     }
                 }
 
-                val copyReactNativeIosBridges = "copyReactNativeIosBridges"
+                val exportReactNativePackages = "exportReactNativePackages"
                 val cocoapods = kotlinMultiplatformExtension?.getCocoapods()
-                exportReactNativePackages(copyReactNativeIosBridges, teleresoKmp, cocoapods)
+                exportReactNativePackages(exportReactNativePackages, teleresoKmp, cocoapods)
 
                 dependsOnTasks.forEach {
                     tasks.findByName(it)?.dependsOn(cleanAndroidGeneratedFiles)
@@ -311,7 +311,6 @@ class KmpPlugin : Plugin<Project> {
                     tasks.findByName(it)?.dependsOn(copyGeneratedFilesAndroidTask)
                     tasks.findByName(it)?.dependsOn(copyGeneratedFilesIosTask)
                     tasks.findByName(it)?.dependsOn(copyGeneratedFilesJsTask)
-                    tasks.findByName(it)?.dependsOn(copyReactNativeIosBridges)
                     if (!teleresoKmp.disableReactNativeGradle8Workaround)
                         tasks.findByName(it)?.dependsOn(reactNativeGradle8Workaround)
                 }
@@ -367,7 +366,7 @@ class KmpPlugin : Plugin<Project> {
     }
 
     private fun Project.exportReactNativePackages(
-        copyReactNativeIosBridgesTask: String,
+        exportReactNativePackagesTask: String,
         teleresoKmp: TeleresoKmpExtension,
         cocoapodsExtension: CocoapodsExtension?
     ) {
@@ -394,7 +393,7 @@ class KmpPlugin : Plugin<Project> {
 
         val exportedDir = rnpDir.resolve("ios/Exported")
 
-        tasks.create(copyReactNativeIosBridgesTask) {
+        tasks.create(exportReactNativePackagesTask) {
             enabled = taskEnabled
             doFirst {
                 if (cocoapodsExtension == null) {
@@ -476,7 +475,7 @@ class KmpPlugin : Plugin<Project> {
             }
         }
 
-        tasks.getByName(copyReactNativeIosBridgesTask)
+        tasks.getByName(exportReactNativePackagesTask)
             .dependsOn("kspCommonMainKotlinMetadata")
             .finalizedBy(replaceImportedReactNativeFramework)
     }
