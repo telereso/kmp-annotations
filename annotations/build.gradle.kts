@@ -175,4 +175,7 @@ tasks.getByName("signWatchosSimulatorArm64Publication")
   .dependsOn("publishWatchosArm32PublicationToSonatypeRepository")
   .dependsOn("publishWatchosArm64PublicationToSonatypeRepository")
 
+tasks.getByName("signIosArm64Publication")
+  .dependsOn("publishNativePublicationToSonatypeRepository")
+
 //////////////////////////////////////////////////////////////////////////////////////////
