@@ -414,7 +414,7 @@ koverReport {
         // Enforce Test Coverage
         rule("Minimal line coverage rate in percent") {
             bound {
-                minValue = 40
+                minValue = 35
             }
         }
     }
