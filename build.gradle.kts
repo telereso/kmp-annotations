@@ -42,7 +42,7 @@ buildscript {
     }
     dependencies {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kmpLibs.versions.kotlin.get()}")
-        classpath("com.android.tools.build:gradle:${kmpLibs.versions.androidGradlePlugin.get()}")
+        classpath("com.android.tools.build:gradle:${kmpLibs.versions.agp.get()}")
     }
 }
 

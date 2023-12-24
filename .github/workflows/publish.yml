@@ -46,6 +46,7 @@ jobs:
         path: |
          ~/.gradle/caches
          ~/.gradle/wrapper
+         /Users/runner/.konan
         key: "gradle-cache"
 
 #    - name: Bump version and push tag

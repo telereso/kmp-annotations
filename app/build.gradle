@@ -41,11 +41,11 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-parcelize'
 
 android {
-  compileSdkVersion 32
+  compileSdkVersion kmpLibs.versions.compileSdk.get().toInteger()
   defaultConfig {
     applicationId "com.yourcompany.fragmentfactory"
     minSdkVersion 23
-    targetSdkVersion 32
+    targetSdkVersion kmpLibs.versions.compileSdk.get().toInteger()
     versionCode 1
     versionName "1.0"
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
