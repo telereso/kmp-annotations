@@ -1,5 +1,6 @@
 package io.telereso.annotations.models
 
+import io.telereso.kmp.annotations.FlutterExport
 import io.telereso.kmp.annotations.ListWrappers
 import io.telereso.kmp.annotations.SwiftOverloads
 import kotlinx.serialization.SerialName
@@ -17,6 +18,7 @@ import kotlin.jvm.JvmOverloads
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 @ListWrappers
+@FlutterExport
 data class RocketLaunch @SwiftOverloads constructor(
     /**
      * The @SerialName annotation allows you to redefine field names,

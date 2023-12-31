@@ -463,4 +463,5 @@ testlogger {
 teleresoKmp {
 //    disableJsonConverters = true
     enableReactNativeExport = true
+    enableFlutterExport = true
 }

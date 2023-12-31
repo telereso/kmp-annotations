@@ -39,8 +39,14 @@ open class TeleresoKmpExtension @Inject constructor(
      * set to true to stop copying generated model files with json converters extensions into src dir
      */
     var disableJsonConverters: Boolean = false
+
     /**
-     * set to true to stop copying generated reactNative files react native dir
+     * set to true to enable copying generated flutter files to flutter dir
+     */
+    var enableFlutterExport: Boolean = false
+
+    /**
+     * set to true to enable copying generated reactNative files to react native dir
      */
     var enableReactNativeExport: Boolean = false
 

@@ -315,53 +315,83 @@ class KmpPlugin : Plugin<Project> {
                         tasks.findByName(it)?.dependsOn(reactNativeGradle8Workaround)
                 }
             }
+
+            if (!teleresoKmp.enableFlutterExport) {
+                log("Skipping adding flutter tasks")
+            } else {
+                log("Adding flutter tasks")
+                val flutterDir = "${baseDir}/flutter_${projectPackageName.replace("-", "_")}"
+
+                // Android tasks
+                val copyFlutterGeneratedFilesAndroidTask = "copyFlutterGeneratedFilesAndroidTask"
+                tasks.create<Copy>(copyFlutterGeneratedFilesAndroidTask) {
+                    log("Copying ksp generated flutter android files")
+
+                    from("${buildDir.path}/generated/ksp/metadata/commonMain/resources/flutter-kotlin/")
+                    into(
+                        "${baseDir}/flutter_${
+                            projectPackageName.replace(
+                                ".",
+                                "_"
+                            )
+                        }/android/src/main/kotlin/"
+                    )
+
+                }
+
+                val copyFlutterAndroidExampleGradle = "copyFlutterAndroidExampleGradle"
+                tasks.create(copyFlutterAndroidExampleGradle) {
+//                    copy {
+//                        from("${baseDir}/gradle/")
+//                        into("$flutterDir/example/android/gradle/")
+//                    }
+//
+//                    copy {
+//                        from("${baseDir}/local.properties")
+//                        into("${flutterDir}/example/android/")
+//                    }
+                }
+
+                // iOS tasks
+                val copyFlutterGeneratedFilesIosTask = "copyFlutterGeneratedFilesIosTask"
+                tasks.create<Copy>(copyFlutterGeneratedFilesIosTask) {
+                    log("Copying ksp generated flutter ios files")
+
+                    from("${buildDir.path}/generated/ksp/metadata/commonMain/resources/flutter")
+                    into(
+                        "${baseDir}/flutter_${
+                            projectPackageName.replace(
+                                ".",
+                                "_"
+                            )
+                        }/flutter/"
+                    )
+                }
+                tasks.getByName(copyFlutterGeneratedFilesIosTask)
+                    .dependsOn("kspCommonMainKotlinMetadata")
+
+                // Js
+                val copyFlutterGeneratedFilesTask = "copyFlutterGeneratedFilesTask"
+
+                tasks.create<Copy>(copyFlutterGeneratedFilesTask) {
+                    log("Copying ksp generated flutter files")
+
+                    from("${buildDir.path}/generated/ksp/metadata/commonMain/resources/flutter/")
+                    into("${baseDir}/flutter_${projectPackageName.replace(".", "_")}/src/")
+                }
+
+//                dependsOnTasks.forEach {
+//                    tasks.findByName(it)?.dependsOn(cleanAndroidGeneratedFiles)
+//                    tasks.findByName(it)?.dependsOn(copyAndroidExampleGradle)
+//                    tasks.findByName(it)?.dependsOn(copyGeneratedFilesAndroidTask)
+//                    tasks.findByName(it)?.dependsOn(copyGeneratedFilesIosTask)
+//                    tasks.findByName(it)?.dependsOn(copyGeneratedFilesJsTask)
+//                }
+            }
         }
 
         gradle.projectsEvaluated {
             tasks.findByName("androidReleaseSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
-        }
-    }
-
-    private fun Project.handleGradle8DokkaTasks() {
-        val transformIosMainTask = "transformIosMainCInteropDependenciesMetadataForIde"
-        tasks.findByName(transformIosMainTask)?.let {
-            tasks.findByName("dokkaHtml")?.dependsOn(it.name)
-        }
-
-        if (name.endsWith("-models")) {
-            val dokkaHtmlTask = rootProject.subprojects.firstOrNull { it.name == name }?.let { p ->
-                p.tasks.findByName("dokkaHtml")?.let { t ->
-                    log("found task :${p.name}:${t.name}")
-                    t
-                }
-            }
-
-            rootProject.subprojects.firstOrNull { it.name == name.replace("-models", "-client") }
-                ?.let { p ->
-                    p.tasks.getByName(transformIosMainTask)?.let { t ->
-                        log("found task :${p.name}:${t.name}")
-                        dokkaHtmlTask?.dependsOn(t)
-                    }
-                }
-        }
-
-        if (name.endsWith("-client")) {
-            val dokkaHtmlTask = rootProject.subprojects.firstOrNull { it.name == name }?.let { p ->
-                p.tasks.findByName("dokkaHtml")?.let { t ->
-                    log("found task :${p.name}:${t.name}")
-                    t
-                }
-            }
-
-            rootProject.subprojects.firstOrNull { it.name == name.replace("-client", "-models") }
-                ?.let { p ->
-                    log("found project :${p.name} ${p.tasks.joinToString { it.name }}")
-
-                    p.tasks.findByName(transformIosMainTask)?.let { t ->
-                        log("found task :${p.name}:${t.name}")
-                        dokkaHtmlTask?.dependsOn(t)
-                    }
-                }
         }
     }
 
