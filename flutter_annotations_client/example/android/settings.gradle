@@ -23,7 +23,39 @@ pluginManagement {
 
 plugins {
     id "dev.flutter.flutter-plugin-loader" version "1.0.0"
-    id "com.android.application" version "7.3.0" apply false
+}
+
+def properties = new Properties()
+file("../../../gradle.properties").withInputStream { properties.load(it) }
+
+dependencyResolutionManagement {
+    repositories {
+        mavenLocal()
+        google()
+        mavenCentral()
+        maven { url = uri("https://s01.oss.sonatype.org/content/groups/staging") }
+    }
+    versionCatalogs {
+        create("kmpLibs") {
+            from("io.telereso.kmp:catalog:${properties.getProperty("teleresoKmpCatalog")}")
+            version("teleresoKmp", "0.0.1-local")
+        }
+    }
 }
 
 include ":app"
+
+includeBuild("../../../gradle-plugin")
+includeBuild("../../../convention-plugins")
+
+include(":annotations")
+project(":annotations").projectDir = file('../../../annotations')
+
+include(":processor")
+project(":processor").projectDir = file('../../../processor')
+
+include ':annotations-client'
+project(':annotations-client').projectDir = file('../../../lib')
+
+include ':annotations-models'
+project(':annotations-models').projectDir = file('../../../models')

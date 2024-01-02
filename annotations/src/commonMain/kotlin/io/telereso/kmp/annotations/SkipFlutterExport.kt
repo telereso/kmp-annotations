@@ -22,20 +22,10 @@
  * SOFTWARE.
  */
 
-package io.telereso.kmp.processor.flutter
+package io.telereso.kmp.annotations
 
-import com.google.devtools.ksp.processing.KSPLogger
-import com.google.devtools.ksp.symbol.KSAnnotated
-import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.validate
+import kotlin.annotation.AnnotationRetention.SOURCE
 
-class FlutterModelSymbolValidator(private val logger: KSPLogger) {
-    fun isValid(symbol: KSAnnotated): Boolean {
-        return symbol is KSClassDeclaration
-                && symbol.validate()
-    }
-
-    private fun KSClassDeclaration.isSerializable(): Boolean {
-        return annotations.any { it.toString() == "@Serializable" } || qualifiedName.toString().endsWith("Manager")
-    }
-}
+@Target(AnnotationTarget.FUNCTION)
+@Retention(SOURCE)
+annotation class SkipFlutterExport

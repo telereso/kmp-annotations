@@ -121,4 +121,5 @@ tasks.dokkaHtml.configure {
 teleresoKmp {
     swiftOverloadsByJvmOverloads = true
     createObjectFunctionName = "instance"
+    enableFlutterExport = true
 }

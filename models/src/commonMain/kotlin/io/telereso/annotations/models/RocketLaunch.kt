@@ -52,6 +52,7 @@ data class RocketLaunch @SwiftOverloads constructor(
 @Serializable
 @OptIn(ExperimentalJsExport::class)
 @JsExport
+@FlutterExport
 data class Rocket @JvmOverloads constructor(
     @SerialName("rocket_id")
     val id: String? = null,
@@ -65,6 +66,7 @@ data class Rocket @JvmOverloads constructor(
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 @SwiftOverloads
+@FlutterExport
 data class Links(
     @SerialName("mission_patch")
     val missionPatchUrl: String?,
@@ -76,6 +78,7 @@ data class Links(
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 @SwiftOverloads
+@FlutterExport
 data class TestModel constructor(
     @SerialName("mission_patch")
     val missionPatchUrl: String?,

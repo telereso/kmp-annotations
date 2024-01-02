@@ -55,6 +55,10 @@ class KmpPlugin : Plugin<Project> {
             kspExtension.arg("scope", scope)
             scope
         }
+        val groupId = getGroupId()?.let { groupId ->
+            kspExtension.arg("groupId", groupId)
+            groupId
+        }
 
         val localProps = Properties().apply {
             File("${rootProject.rootDir}/local.properties").apply {
@@ -108,7 +112,7 @@ class KmpPlugin : Plugin<Project> {
             val kotlinMultiplatformExtension = project.extensions
                 .findByType(KotlinMultiplatformExtension::class.java)
 
-            if (teleresoKmp.enableReactNativeExport || !teleresoKmp.disableJsonConverters) {
+            if (teleresoKmp.enableReactNativeExport || teleresoKmp.enableFlutterExport || !teleresoKmp.disableJsonConverters) {
                 includeGeneratedClassesToSrcSet(kotlinMultiplatformExtension)
             }
 
@@ -331,13 +335,16 @@ class KmpPlugin : Plugin<Project> {
                     into(
                         "${baseDir}/flutter_${
                             projectPackageName.replace(
-                                ".",
+                                "-",
                                 "_"
                             )
                         }/android/src/main/kotlin/"
                     )
 
                 }
+
+                tasks.getByName(copyFlutterGeneratedFilesAndroidTask)
+                    .dependsOn("kspCommonMainKotlinMetadata")
 
                 val copyFlutterAndroidExampleGradle = "copyFlutterAndroidExampleGradle"
                 tasks.create(copyFlutterAndroidExampleGradle) {
@@ -361,7 +368,7 @@ class KmpPlugin : Plugin<Project> {
                     into(
                         "${baseDir}/flutter_${
                             projectPackageName.replace(
-                                ".",
+                                "-",
                                 "_"
                             )
                         }/flutter/"
@@ -370,23 +377,30 @@ class KmpPlugin : Plugin<Project> {
                 tasks.getByName(copyFlutterGeneratedFilesIosTask)
                     .dependsOn("kspCommonMainKotlinMetadata")
 
-                // Js
+                // Flutter tasks
                 val copyFlutterGeneratedFilesTask = "copyFlutterGeneratedFilesTask"
 
-                tasks.create<Copy>(copyFlutterGeneratedFilesTask) {
+                tasks.create(copyFlutterGeneratedFilesTask) {
                     log("Copying ksp generated flutter files")
+                    val toDir = "${baseDir}/flutter_${projectPackageName.replace("-", "_").replace("models","client")}/lib/"
+                    delete {
+                        delete(toDir.plus(project.name.split("-").last()))
+                    }
 
-                    from("${buildDir.path}/generated/ksp/metadata/commonMain/resources/flutter/")
-                    into("${baseDir}/flutter_${projectPackageName.replace(".", "_")}/src/")
+                    copy {
+                        from("${buildDir.path}/generated/ksp/metadata/commonMain/resources/flutter")
+                        into(toDir)
+                    }
+
                 }
 
-//                dependsOnTasks.forEach {
-//                    tasks.findByName(it)?.dependsOn(cleanAndroidGeneratedFiles)
-//                    tasks.findByName(it)?.dependsOn(copyAndroidExampleGradle)
-//                    tasks.findByName(it)?.dependsOn(copyGeneratedFilesAndroidTask)
-//                    tasks.findByName(it)?.dependsOn(copyGeneratedFilesIosTask)
-//                    tasks.findByName(it)?.dependsOn(copyGeneratedFilesJsTask)
-//                }
+                tasks.getByName(copyFlutterGeneratedFilesTask)
+                    .dependsOn("kspCommonMainKotlinMetadata")
+
+                dependsOnTasks.forEach {
+                    tasks.findByName(it)?.dependsOn(copyFlutterGeneratedFilesTask)
+                    tasks.findByName(it)?.dependsOn(copyFlutterGeneratedFilesAndroidTask)
+                }
             }
         }
 
@@ -538,6 +552,18 @@ fun Project.getScope(): String? {
             null
         }
     }?.toString()
+}
+
+fun Project.getGroupId(): String {
+    val extraKey = "groupId"
+    return when {
+        extra.has(extraKey) -> extra.get(extraKey)
+        rootProject.extra.has(extraKey) -> rootProject.extra.get(extraKey)
+        else -> {
+            log("`groupId` was not found in project's extras")
+            null
+        }
+    }?.toString() ?: group.toString()
 }
 
 fun Project.log(message: String) {

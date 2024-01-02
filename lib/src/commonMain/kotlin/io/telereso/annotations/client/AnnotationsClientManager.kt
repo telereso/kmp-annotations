@@ -11,6 +11,7 @@ import io.telereso.annotations.client.remote.AnnotationsApiServiceImpl
 import io.telereso.annotations.client.repositories.AnnotationsClientRepository
 import io.ktor.client.plugins.*
 import io.ktor.client.statement.*
+import io.telereso.kmp.annotations.FlutterExport
 import io.telereso.kmp.annotations.ListWrappers
 import io.telereso.kmp.annotations.ReactNativeExport
 import io.telereso.kmp.annotations.SkipListWrappers
@@ -37,6 +38,7 @@ import kotlin.native.concurrent.ThreadLocal
 @JsExport
 @ReactNativeExport
 @ListWrappers
+@FlutterExport
 class AnnotationsClientManager private constructor(
     databaseDriverFactory: DatabaseDriverFactory? = null,
     private val builder: Builder,

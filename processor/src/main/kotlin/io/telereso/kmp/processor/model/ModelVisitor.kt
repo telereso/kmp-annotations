@@ -53,31 +53,32 @@ class ModelVisitor(
             convertersClassName = classDeclaration.simpleName.asString()
         }
 
-        val outputStream: OutputStream = codeGenerator.createNewFile(
-            dependencies = Dependencies(false),
-            packageString,
-            fileName = "${className}Converters",
-            extensionName = "kt"
-        )
-        val filePackageString = packageString.let {
-            if (it.isBlank()) "" else "package $it"
-        }
+        runCatching {
+            val outputStream: OutputStream = codeGenerator.createNewFile(
+                dependencies = Dependencies(false),
+                packageString,
+                fileName = "${className}Converters",
+                extensionName = "kt"
+            )
+            val filePackageString = packageString.let {
+                if (it.isBlank()) "" else "package $it"
+            }
 
-        val importClassString = filePackageString.let {
-            if (it.isBlank()) "" else "import $packageString.$className"
-        }
+            val importClassString = filePackageString.let {
+                if (it.isBlank()) "" else "import $packageString.$className"
+            }
 
-        val internalString = if(classDeclaration.isInternal()) "internal " else ""
+            val internalString = if(classDeclaration.isInternal()) "internal " else ""
 
-        val jsExportAnnotation = classDeclaration.annotations.firstOrNull {
-            it.shortName.asString() == "JsExport"
-        }
+            val jsExportAnnotation = classDeclaration.annotations.firstOrNull {
+                it.shortName.asString() == "JsExport"
+            }
 
-        val commentJsExport = if (jsExportAnnotation != null) "" else "// "
+            val commentJsExport = if (jsExportAnnotation != null) "" else "// "
 
 
-        outputStream.write(
-            """
+            outputStream.write(
+                """
             |$filePackageString
             |
             |import kotlinx.serialization.builtins.ListSerializer
@@ -118,13 +119,15 @@ class ModelVisitor(
             |
             |
             """.trimMargin().toByteArray()
-        )
+            )
 
 
-        if (shouldGenerateUtilFile) {
-            generateUtilFile(codeGenerator, packageString, filePackageString)
-            shouldGenerateUtilFile = false
+            if (shouldGenerateUtilFile) {
+                generateUtilFile(codeGenerator, packageString, filePackageString)
+                shouldGenerateUtilFile = false
+            }
         }
+
     }
 
     private fun generateUtilFile(

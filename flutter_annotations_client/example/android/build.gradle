@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.7.10'
+    ext.kotlin_version = '1.9.21'
     repositories {
         google()
         mavenCentral()
@@ -7,7 +7,23 @@ buildscript {
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath("com.squareup.sqldelight:gradle-plugin:1.5.5")
+        classpath("org.jetbrains.kotlin:kotlin-serialization:1.9.10")
+        classpath("org.jetbrains.dokka:dokka-gradle-plugin:1.9.0")
+        classpath("com.codingfeline.buildkonfig:buildkonfig-gradle-plugin:0.13.3")
     }
+}
+
+plugins {
+    alias(kmpLibs.plugins.kotlin.multiplatform) apply false
+    alias(kmpLibs.plugins.android.library) apply false
+    alias(kmpLibs.plugins.kotlin.native.cocoapods) apply false
+    alias(kmpLibs.plugins.kotlin.serialization) apply false
+    alias(kmpLibs.plugins.kotlin.parcelize) apply false
+    alias(kmpLibs.plugins.dokka) apply false
+    alias(kmpLibs.plugins.sqldelight) apply false
+    alias(kmpLibs.plugins.buildkonfig) apply false
+
 }
 
 allprojects {
@@ -25,6 +41,7 @@ subprojects {
     project.evaluationDependsOn(':app')
 }
 
-tasks.register("clean", Delete) {
+tasks.register("cleanFlutter", Delete) {
+    mustRunAfter "clean"
     delete rootProject.buildDir
 }

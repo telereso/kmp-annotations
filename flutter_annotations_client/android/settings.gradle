@@ -1,1 +1,8 @@
 rootProject.name = 'flutter_annotations_client'
+
+
+include ':annotations-client'
+project(':annotations-client').projectDir = file('../../lib')
+
+include ':annotations-models'
+project(':annotations-models').projectDir = file('../../models')

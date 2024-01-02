@@ -53,6 +53,7 @@ class KMProcessorProvider : SymbolProcessorProvider {
             logger = environment.logger,
             codeGenerator = environment.codeGenerator,
             scope = environment.options["scope"],
+            groupId = environment.options["groupId"],
             packageName = environment.options["packageName"]
         )
     }
@@ -63,6 +64,7 @@ class KMPModelProcessor(
     private val logger: KSPLogger,
     private val codeGenerator: CodeGenerator,
     private val scope: String? = null,
+    private val groupId: String? = null,
     private val packageName: String? = null,
 ) : SymbolProcessor {
     private val flutterValidator = FlutterModelSymbolValidator(logger)
@@ -76,7 +78,7 @@ class KMPModelProcessor(
         logger.info("KMPModelProcessor was invoked.")
 
         return processModel(resolver, packageName) +
-                processFlutter(resolver, packageName) +
+                processFlutter(resolver, groupId, packageName) +
                 processReactNative(resolver, scope, packageName) +
                 processBuilder(resolver, packageName) +
                 processListWrappers(resolver, packageName) +
@@ -107,7 +109,11 @@ class KMPModelProcessor(
         return unresolvedSymbols
     }
 
-    private fun processFlutter(resolver: Resolver, packageName: String?): List<KSAnnotated> {
+    private fun processFlutter(
+        resolver: Resolver,
+        groupId: String?,
+        packageName: String?
+    ): List<KSAnnotated> {
         var unresolvedSymbols: List<KSAnnotated> = emptyList()
         val annotationName = FlutterExport::class.qualifiedName
 
@@ -115,7 +121,7 @@ class KMPModelProcessor(
             val resolved = resolver.getSymbolsWithAnnotation(annotationName).toList()     // 1
             val validatedSymbols = resolved.filter { it.validate() }.toList()     // 2
             val dependencies = Dependencies(false, *resolver.getAllFiles().toList().toTypedArray())
-            val visitor = FlutterModelVisitor(codeGenerator, dependencies, packageName)
+            val visitor = FlutterModelVisitor(logger, codeGenerator, dependencies, groupId, packageName)
 
             validatedSymbols.filter {
                 flutterValidator.isValid(it)
