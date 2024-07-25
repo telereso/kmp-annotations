@@ -22,30 +22,6 @@
  * SOFTWARE.
  */
 
-val props = java.util.Properties().apply {
-    File("${rootDir}/../gradle.properties").inputStream().use { fis ->
-        load(fis)
-    }
-}
+package io.telereso.kmp.annotations
 
-dependencyResolutionManagement {
-    repositories {
-        mavenLocal()
-        google()
-        mavenCentral()
-        maven { url = uri("https://s01.oss.sonatype.org/content/groups/staging") }
-        maven(url = "https://pkgs.dev.azure.com/burnoo/maven/_packaging/public/maven/v1") {
-            content {
-                includeVersionByRegex(".*", ".*", ".*-beap[0-9]+")
-            }
-        }
-    }
-    versionCatalogs {
-        create("kmpLibs") {
-            from("io.telereso.kmp:catalog:${props["teleresoKmpCatalog"]}")
-            version("teleresoKmp", "0.0.1-local")
-//            version("kotlin", "2.0.20")
-//            version("ksp", "2.0.20-1.0.24")
-        }
-    }
-}
+actual typealias JsOnlyExport = JsExport

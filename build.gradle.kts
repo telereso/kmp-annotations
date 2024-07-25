@@ -48,15 +48,6 @@ buildscript {
     }
 }
 
-allprojects {
-    repositories {
-        google()
-        gradlePluginPortal()
-        mavenCentral()
-        mavenLocal()
-        maven { url = uri("https://s01.oss.sonatype.org/content/groups/staging") }
-    }
-}
 //tasks.register("clean", Delete::class) {
 //    delete(rootProject.buildDir)
 //}
