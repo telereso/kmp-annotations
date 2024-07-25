@@ -1,8 +1,6 @@
 val teleresoKmpCatalog: String by settings
 
 pluginManagement {
-    plugins {
-    }
     repositories {
         google()
         gradlePluginPortal()
@@ -23,7 +21,10 @@ dependencyResolutionManagement {
     versionCatalogs {
         create("kmpLibs") {
             from("io.telereso.kmp:catalog:$teleresoKmpCatalog")
-            version("teleresoKmp", "0.0.1-local")
+//            version("kotlin", "2.0.0")
+//            version("ksp", "2.0.0-1.0.22")
+            version("teleresoCore", "0.1.4")
+            version("buildConfig", "0.15.1")
         }
     }
 }

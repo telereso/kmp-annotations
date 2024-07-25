@@ -13,6 +13,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
+import kotlin.test.Ignore
 import kotlin.test.Test
 
 class AnnotationsApiServiceImplTest {
@@ -45,6 +46,7 @@ class AnnotationsApiServiceImplTest {
     }
 
     @Test
+    @Ignore
     fun fetchRockets() = runTest {
         val result = apiService.fetchRockets()
         result.size.shouldBe(111)

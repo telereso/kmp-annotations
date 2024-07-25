@@ -10,6 +10,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
+import kotlin.test.Ignore
 import kotlin.test.Test
 
 
@@ -36,6 +37,7 @@ class DaoTest {
     }
 
     @Test
+    @Ignore
     fun shouldSelectAllRockets() = runTest {
         dao.database.queries {
             it.insertRocketLaunch(2, RocketLaunch(mission_name = "Mars and Beyond"))

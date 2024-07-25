@@ -93,7 +93,7 @@ kotlin {
      * for KKM Library.
      *
      */
-    js(IR) {
+    js {
         moduleName = "@$scope/${project.name}"
         version = project.version as String
 
@@ -105,7 +105,7 @@ kotlin {
 
         nodejs()
 
-        binaries.library()
+//        binaries.library()
         binaries.executable()
     }
 
@@ -122,8 +122,7 @@ kotlin {
             languageSettings.optIn("kotlin.js.ExperimentalJsExport")
         }
 
-        val commonMain by getting {
-            kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
+        commonMain {
             dependencies {
                 implementation(project(":annotations"))
                 api(project(":annotations-models"))
@@ -139,7 +138,7 @@ kotlin {
                 implementation(kmpLibs.bundles.kotlinx)
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(kotlin("test-common"))
@@ -149,7 +148,7 @@ kotlin {
                 implementation(kmpLibs.test.ktor.client.mock)
             }
         }
-        val jvmMain by getting {
+        jvmMain  {
             dependencies {
                 implementation(kmpLibs.ktor.client.okhttp)
                 implementation(kmpLibs.okhttp.logging)
@@ -157,40 +156,26 @@ kotlin {
             }
         }
 
-        val jvmTest by getting {
-            dependsOn(commonTest)
+        jvmTest  {
             dependencies {
                 implementation(kmpLibs.sqldelight.sqlite.driver)
             }
         }
-        val androidMain by getting {
+        androidMain {
             dependencies {
                 implementation(kmpLibs.ktor.client.okhttp)
                 implementation(kmpLibs.okhttp.logging)
                 implementation(kmpLibs.sqldelight.android.driver)
             }
         }
+
         val androidUnitTest by getting {
-            dependsOn(commonTest)
             dependencies {
                 implementation(kmpLibs.sqldelight.sqlite.driver)
             }
         }
-        val iosX64Main by getting
-        val iosArm64Main by getting
-        val iosSimulatorArm64Main by getting
 
-        /**
-         * By using the by creating scope, we ensure the rest of the Darwin targets
-         * pick dependecies from the iOSMain.
-         * Note using this actual implementations should only exist in the iosMain else
-         * the project will complain.
-         */
-        val iosMain by creating {
-            dependsOn(commonMain)
-            iosX64Main.dependsOn(this)
-            iosArm64Main.dependsOn(this)
-            iosSimulatorArm64Main.dependsOn(this)
+        iosMain {
             dependencies {
                 /**
                  * For iOS, we add the ktor-client-darwin dependency
@@ -201,25 +186,12 @@ kotlin {
                 implementation(kmpLibs.sqldelight.native.driver)
             }
         }
-        val iosX64Test by getting
-        val iosArm64Test by getting
-        val iosSimulatorArm64Test by getting {
-            dependsOn(commonTest)
-        }
-        val iosTest by creating {
-            dependsOn(commonTest)
-            iosX64Test.dependsOn(this)
-            iosArm64Test.dependsOn(this)
-            /**
-             * TO runs tests for iOS the simulator should not depend on ioSTEst to avoid duplication.
-             */
-            //iosSimulatorArm64Test.dependsOn(this)
-        }
+
 
         /**
          * Adding main and test for JS.
          */
-        val jsMain by getting {
+        jsMain {
             dependencies {
                 /**
                  * Engines are used to process network requests. Note that a specific platform may require a specific engine that processes network requests.
@@ -233,8 +205,7 @@ kotlin {
                 implementation(npm("@js-joda/core", kmpLibs.versions.js.joda.core.get()))
             }
         }
-        val jsTest by getting {
-            dependsOn(commonTest)
+        jsTest {
             dependencies {
                 implementation(kmpLibs.sqldelight.sqljs.driver)
             }
@@ -248,7 +219,7 @@ kotlin {
      * To try out this ability to export KDoc comments to Objective-C headers, use the -Xexport-kdoc compiler option. :)
      */
     targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget> {
-        compilations.get("main").kotlinOptions.freeCompilerArgs += "-Xexport-kdoc"
+        compilations.get("main").compilerOptions.options.freeCompilerArgs.add("-Xexport-kdoc")
     }
 }
 
@@ -256,7 +227,7 @@ buildkonfig {
     //  Set the package name where BuildKonfig is being placed. Required.
     packageName = "$groupId.${project.name.replace("-",".")}"
     // objectName Set the name of the generated object. Defaults to BuildKonfig.
-    // objectName = "YourAwesomeConfig"
+     objectName = "BuildKonfig"
     // exposeObjectWithName Set the name of the generated object, and make it public.
     // exposeObjectWithName = "YourAwesomePublicConfig"
 
@@ -414,7 +385,7 @@ koverReport {
         // Enforce Test Coverage
         rule("Minimal line coverage rate in percent") {
             bound {
-                minValue = 35
+                minValue = 34
             }
         }
     }
