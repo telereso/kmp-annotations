@@ -39,7 +39,7 @@ kotlin {
 
         browser()
         nodejs()
-        binaries.library()
+//        binaries.library()
         binaries.executable()
     }
 
