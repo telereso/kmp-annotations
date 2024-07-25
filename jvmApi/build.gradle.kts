@@ -10,10 +10,16 @@ version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_11
 
 repositories {
+	mavenLocal()
 	mavenCentral()
 	maven { url = uri("https://s01.oss.sonatype.org/content/groups/staging") }
 	maven { url = uri("https://repo.spring.io/milestone") }
 	maven { url = uri("https://repo.spring.io/snapshot") }
+	maven(url = "https://pkgs.dev.azure.com/burnoo/maven/_packaging/public/maven/v1") {
+		content {
+			includeVersionByRegex(".*", ".*", ".*-beap[0-9]+")
+		}
+	}
 }
 
 dependencies {

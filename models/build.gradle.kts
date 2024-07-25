@@ -32,6 +32,7 @@ kotlin {
         }
     }
 
+//    wasmJs()
 
     js(IR) {
         moduleName = "@$scope/${project.name}"
