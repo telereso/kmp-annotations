@@ -39,8 +39,8 @@ dependencyResolutionManagement {
         create("kmpLibs") {
             from("io.telereso.kmp:catalog:${props["teleresoKmpCatalog"]}")
             version("teleresoKmp", "0.0.1-local")
-//            version("kotlin", "2.0.0")
-//            version("ksp", "2.0.0-1.0.22")
+//            version("kotlin", "2.0.20")
+//            version("ksp", "2.0.20-1.0.24")
         }
     }
 }

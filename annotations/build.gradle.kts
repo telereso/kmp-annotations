@@ -31,7 +31,10 @@ kotlin {
   }
 
   @OptIn(ExperimentalWasmDsl::class)
-  wasmJs()
+  wasmJs{
+    browser()
+    nodejs()
+  }
 
   sourceSets {
 
@@ -57,8 +60,6 @@ android {
 }
 
 //////////////////// FIXME  ////////////////////
-tasks.getByName("jsNodeProductionLibraryPrepare").dependsOn("jsProductionExecutableCompileSync")
-tasks.getByName("jsBrowserProductionLibraryPrepare").dependsOn("jsProductionExecutableCompileSync")
 tasks.getByName("jsBrowserProductionWebpack").dependsOn("jsProductionLibraryCompileSync")
 tasks.getByName("jsBrowserProductionLibraryDistribution").dependsOn("jsProductionExecutableCompileSync")
 tasks.getByName("jsNodeProductionLibraryDistribution").dependsOn("jsProductionExecutableCompileSync")

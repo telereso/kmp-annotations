@@ -155,18 +155,19 @@ class KmpPlugin : Plugin<Project> {
             tasks.findByName("iosSimulatorArm64SourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("jvmSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
 
-//            handleGradle8DokkaTasks()
 
-            tasks.findByName("jsNodeProductionLibraryPrepare")
-                ?.dependsOn("jsProductionExecutableCompileSync")
-            tasks.findByName("jsBrowserProductionLibraryPrepare")
-                ?.dependsOn("jsProductionExecutableCompileSync")
-//            tasks.findByName("jsBrowserProductionWebpack")
-//                ?.dependsOn("jsProductionLibraryCompileSync")
-//            tasks.findByName("jsBrowserProductionLibraryDistribution")
-//                ?.dependsOn("jsProductionExecutableCompileSync")
-//            tasks.findByName("jsNodeProductionLibraryDistribution")
-//                ?.dependsOn("jsProductionExecutableCompileSync")
+            tasks.findByName("jsProductionExecutableCompileSync")?.let {
+                tasks.findByName("jsNodeProductionLibraryPrepare")?.dependsOn(it)
+                tasks.findByName("jsBrowserProductionLibraryPrepare")?.dependsOn(it)
+                tasks.findByName("jsNodeProductionLibraryDistribution")?.dependsOn(it)
+                tasks.findByName("jsBrowserProductionLibraryDistribution")?.dependsOn(it)
+            }
+
+            tasks.findByName("jsProductionLibraryCompileSync")?.let {
+                tasks.findByName("jsBrowserProductionWebpack")?.dependsOn(it)
+                tasks.findByName("jsBrowserProductionLibraryDistribution")?.dependsOn(it)
+                tasks.findByName("jsNodeProductionLibraryDistribution")?.dependsOn(it)
+            }
 
             if (teleresoKmp.disableJsonConverters) {
                 log("Skipping adding models tasks")

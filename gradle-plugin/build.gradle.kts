@@ -70,7 +70,7 @@ publishing {
     repositories {
         maven {
             name = "localPluginRepository"
-            url = uri("${project.rootProject.buildDir}/.m2/repository")
+            url = uri("${project.rootProject.layout.buildDirectory}/.m2/repository")
         }
     }
 }
