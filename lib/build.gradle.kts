@@ -92,7 +92,7 @@ kotlin {
 
         browser()
 
-//        binaries.library()
+        binaries.library()
         binaries.executable()
         generateTypeScriptDefinitions()
     }
@@ -218,7 +218,7 @@ buildkonfig {
     //  Set the package name where BuildKonfig is being placed. Required.
     packageName = "$groupId.${project.name.replace("-",".")}"
     // objectName Set the name of the generated object. Defaults to BuildKonfig.
-     objectName = "BuildKonfig"
+    // objectName = "BuildKonfig"
     // exposeObjectWithName Set the name of the generated object, and make it public.
     // exposeObjectWithName = "YourAwesomePublicConfig"
 
