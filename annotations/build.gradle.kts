@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
-
 plugins {
   alias(kmpLibs.plugins.kotlin.multiplatform)
   alias(kmpLibs.plugins.android.library)
@@ -37,8 +35,8 @@ kotlin {
     binaries.executable()
   }
 
-  @OptIn(ExperimentalWasmDsl::class)
-  wasmJs{
+  @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
+  wasmJs {
     browser()
     nodejs()
   }
