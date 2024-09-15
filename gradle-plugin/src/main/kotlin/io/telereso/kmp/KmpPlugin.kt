@@ -94,7 +94,7 @@ class KmpPlugin : Plugin<Project> {
                 ?.sourceSets
                 ?.findByName("commonMain")
                 ?.kotlin {
-                    srcDirs(buildDir.resolve("generated/ksp/metadata/commonMain/kotlin"))
+                    srcDirs(layout.buildDirectory.dir("generated/ksp/metadata/commonMain/kotlin"))
                 }
         }
 
@@ -118,7 +118,7 @@ class KmpPlugin : Plugin<Project> {
             val jsCleanLibraryDistributionTask = "jsCleanLibraryDistribution"
             tasks.create<Delete>(jsCleanLibraryDistributionTask) {
                 group = "Clean"
-                delete(buildDir.resolve("dist/js/productionLibrary"))
+                delete(layout.buildDirectory.dir("dist/js/productionLibrary"))
             }
 
             tasks.findByName("compileKotlinJs")?.apply {
@@ -155,14 +155,19 @@ class KmpPlugin : Plugin<Project> {
             tasks.findByName("iosSimulatorArm64SourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("jvmSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
 
-//            handleGradle8DokkaTasks()
 
-            tasks.findByName("jsNodeProductionLibraryPrepare")
-                ?.dependsOn("jsProductionExecutableCompileSync")
-            tasks.findByName("jsBrowserProductionLibraryPrepare")
-                ?.dependsOn("jsProductionExecutableCompileSync")
-            tasks.findByName("jsBrowserProductionWebpack")
-                ?.dependsOn("jsProductionLibraryCompileSync")
+            tasks.findByName("jsProductionExecutableCompileSync")?.let {
+                tasks.findByName("jsNodeProductionLibraryPrepare")?.dependsOn(it)
+                tasks.findByName("jsBrowserProductionLibraryPrepare")?.dependsOn(it)
+                tasks.findByName("jsNodeProductionLibraryDistribution")?.dependsOn(it)
+                tasks.findByName("jsBrowserProductionLibraryDistribution")?.dependsOn(it)
+            }
+
+            tasks.findByName("jsProductionLibraryCompileSync")?.let {
+                tasks.findByName("jsBrowserProductionWebpack")?.dependsOn(it)
+                tasks.findByName("jsBrowserProductionLibraryDistribution")?.dependsOn(it)
+                tasks.findByName("jsNodeProductionLibraryDistribution")?.dependsOn(it)
+            }
 
             if (teleresoKmp.disableJsonConverters) {
                 log("Skipping adding models tasks")
@@ -184,13 +189,13 @@ class KmpPlugin : Plugin<Project> {
             val cleanAndroidGeneratedFiles = "cleanAndroidGeneratedFiles"
             tasks.create<Delete>(cleanAndroidGeneratedFiles) {
                 group = "Clean"
-                delete(buildDir.resolve("generated/ksp/metadata/commonMain/rn-kotlin"))
+                delete(layout.buildDirectory.dir("generated/ksp/metadata/commonMain/rn-kotlin"))
             }
 
             tasks.create<Copy>(copyGeneratedFilesAndroidTask) {
                 log("Copying ksp generated reactNative android files")
 
-                from("${buildDir.path}/generated/ksp/metadata/commonMain/resources/rn-kotlin/")
+                from("${layout.buildDirectory}/generated/ksp/metadata/commonMain/resources/rn-kotlin/")
                 into(
                     "${baseDir}/react-native-${
                         projectPackageName.replace(
@@ -208,7 +213,7 @@ class KmpPlugin : Plugin<Project> {
             tasks.create<Copy>(copyGeneratedFilesIosTask) {
                 log("Copying ksp generated reactNative ios files")
 
-                from("${buildDir.path}/generated/ksp/metadata/commonMain/resources/ios")
+                from("${layout.buildDirectory.asFile.get().path}/generated/ksp/metadata/commonMain/resources/ios")
                 into(
                     "${baseDir}/react-native-${
                         projectPackageName.replace(
@@ -225,7 +230,7 @@ class KmpPlugin : Plugin<Project> {
             tasks.create<Copy>(copyGeneratedFilesJsTask) {
                 log("Copying ksp generated reactNative js files")
 
-                from("${buildDir.path}/generated/ksp/metadata/commonMain/resources/js/")
+                from("${layout.buildDirectory.asFile.get().path}/generated/ksp/metadata/commonMain/resources/js/")
                 into("${baseDir}/react-native-${projectPackageName.replace(".", "-")}/src/")
             }
 
@@ -322,49 +327,6 @@ class KmpPlugin : Plugin<Project> {
         }
     }
 
-    private fun Project.handleGradle8DokkaTasks() {
-        val transformIosMainTask = "transformIosMainCInteropDependenciesMetadataForIde"
-        tasks.findByName(transformIosMainTask)?.let {
-            tasks.findByName("dokkaHtml")?.dependsOn(it.name)
-        }
-
-        if (name.endsWith("-models")) {
-            val dokkaHtmlTask = rootProject.subprojects.firstOrNull { it.name == name }?.let { p ->
-                p.tasks.findByName("dokkaHtml")?.let { t ->
-                    log("found task :${p.name}:${t.name}")
-                    t
-                }
-            }
-
-            rootProject.subprojects.firstOrNull { it.name == name.replace("-models", "-client") }
-                ?.let { p ->
-                    p.tasks.getByName(transformIosMainTask)?.let { t ->
-                        log("found task :${p.name}:${t.name}")
-                        dokkaHtmlTask?.dependsOn(t)
-                    }
-                }
-        }
-
-        if (name.endsWith("-client")) {
-            val dokkaHtmlTask = rootProject.subprojects.firstOrNull { it.name == name }?.let { p ->
-                p.tasks.findByName("dokkaHtml")?.let { t ->
-                    log("found task :${p.name}:${t.name}")
-                    t
-                }
-            }
-
-            rootProject.subprojects.firstOrNull { it.name == name.replace("-client", "-models") }
-                ?.let { p ->
-                    log("found project :${p.name} ${p.tasks.joinToString { it.name }}")
-
-                    p.tasks.findByName(transformIosMainTask)?.let { t ->
-                        log("found task :${p.name}:${t.name}")
-                        dokkaHtmlTask?.dependsOn(t)
-                    }
-                }
-        }
-    }
-
     private fun Project.exportReactNativePackages(
         exportReactNativePackagesTask: String,
         teleresoKmp: TeleresoKmpExtension,
@@ -435,7 +397,7 @@ class KmpPlugin : Plugin<Project> {
 
             doLast {
                 project.fileTree(exportedDir).visit {
-                    if (isDirectory && file.listFiles().isEmpty()
+                    if (isDirectory && file.listFiles().isNullOrEmpty()
                         || file.name.endsWith(".xcodeproj")
                         || file.name.endsWith(".xcworkspace")
                     ) {
@@ -511,9 +473,9 @@ fun Project.getScope(): String? {
 }
 
 fun Project.log(message: String) {
-    println("Telereso:$name: ${message}")
+    println("Telereso:$name: $message")
 }
 
 fun log(message: String) {
-    println("Telereso: ${message}")
+    println("Telereso: $message")
 }

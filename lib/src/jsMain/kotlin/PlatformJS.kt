@@ -7,9 +7,6 @@ import com.squareup.sqldelight.db.SqlPreparedStatement
 import com.squareup.sqldelight.drivers.sqljs.initSqlDriver
 import kotlinx.coroutines.await
 
-
-actual interface Parcelable
-
 actual suspend fun provideDbDriver(
     schema: SqlDriver.Schema,
     databaseDriverFactory: DatabaseDriverFactory?

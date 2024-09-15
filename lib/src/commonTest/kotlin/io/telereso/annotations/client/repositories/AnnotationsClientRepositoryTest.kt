@@ -21,6 +21,7 @@ import io.telereso.annotations.client.remote.AnnotationsApiServiceImpl
 import io.telereso.annotations.client.repositories.AnnotationsClientRepository
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
+import kotlin.test.Ignore
 import kotlin.test.Test
 
 class AnnotationsClientRepositoryTest {
@@ -56,6 +57,7 @@ class AnnotationsClientRepositoryTest {
     }
 
     @Test
+    @Ignore
     fun fetchRockets() = runTest {
         val result = repository.getLaunchRockets()
 

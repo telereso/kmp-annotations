@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import io.gitlab.arturbosch.detekt.Detekt
 
 plugins {
     alias(kmpLibs.plugins.kotlin.jvm) apply false
@@ -6,6 +7,7 @@ plugins {
     alias(kmpLibs.plugins.android.library) apply false
     alias(kmpLibs.plugins.kotlin.native.cocoapods) apply false
     alias(kmpLibs.plugins.kotlin.parcelize) apply false
+    alias(kmpLibs.plugins.detekt) apply false
 
 }
 
@@ -173,5 +175,11 @@ tasks.register("rnIosApp") {
             workingDir = rootDir.resolve("react-native-${project.name}")
             commandLine("yarn example ios".split(" "))
         }
+    }
+}
+
+tasks.register("detektAll") {
+    allprojects {
+        this@register.dependsOn(tasks.withType<Detekt>())
     }
 }

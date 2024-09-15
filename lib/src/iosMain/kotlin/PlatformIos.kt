@@ -6,8 +6,6 @@ import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.drivers.native.NativeSqliteDriver
 
 
-actual interface Parcelable
-
 actual suspend fun provideDbDriver(
     schema: SqlDriver.Schema,
     databaseDriverFactory: DatabaseDriverFactory?

@@ -6,11 +6,6 @@ import io.telereso.annotations.client.cache.Dao
 import com.squareup.sqldelight.android.AndroidSqliteDriver
 import com.squareup.sqldelight.db.SqlDriver
 
-/**
- * Android we type tyhe alias to the real Parcelable
- */
-actual typealias  Parcelable = android.os.Parcelable
-
 actual suspend fun provideDbDriver(
     schema: SqlDriver.Schema,
     databaseDriverFactory: DatabaseDriverFactory?
