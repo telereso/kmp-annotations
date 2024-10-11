@@ -1,17 +1,21 @@
 package io.telereso.annotations.client
 
-import com.squareup.sqldelight.db.SqlDriver
+import app.cash.sqldelight.async.coroutines.synchronous
+import app.cash.sqldelight.db.QueryResult
+import app.cash.sqldelight.db.SqlSchema
+import io.telereso.annotations.client.cache.AnnotationsClientDatabase
+import io.telereso.annotations.client.cache.Dao
+import io.telereso.kmp.core.SqlDriverFactory
 
 
-actual class DatabaseDriverFactory() {
-    actual fun createDriver(): SqlDriver {
-        TODO("Not yet implemented")
+actual open class AnnotationsClientDatabaseDriverFactory(databaseName: String? = null) :
+    SqlDriverFactory(databaseName ?: Dao.DATABASE_NAME) {
+    actual companion object {
+        actual fun default(databaseName: String?): SqlDriverFactory {
+            return AnnotationsClientDatabaseDriverFactory(databaseName)
+        }
     }
-}
 
-actual suspend fun provideDbDriver(
-    schema: SqlDriver.Schema,
-    databaseDriverFactory: DatabaseDriverFactory?
-): SqlDriver {
-    TODO("Not yet implemented")
+    actual override fun getAsyncSchema() = AnnotationsClientDatabase.Schema
+    override fun getSchema(): SqlSchema<QueryResult.Value<Unit>>? = AnnotationsClientDatabase.Schema.synchronous()
 }

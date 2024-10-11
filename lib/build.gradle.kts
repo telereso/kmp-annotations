@@ -3,14 +3,12 @@ import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 
 plugins {
     alias(kmpLibs.plugins.android.library)
-
     alias(kmpLibs.plugins.kotlin.multiplatform)
     alias(kmpLibs.plugins.kotlin.native.cocoapods)
     alias(kmpLibs.plugins.kotlin.serialization)
     alias(kmpLibs.plugins.kotlin.parcelize)
     alias(kmpLibs.plugins.kotlinx.kover)
     alias(kmpLibs.plugins.dokka)
-
     alias(kmpLibs.plugins.sqldelight)
     alias(kmpLibs.plugins.test.logger)
     alias(kmpLibs.plugins.buildkonfig)
@@ -65,11 +63,6 @@ kotlin {
 
             export(kmpLibs.telereso.core)
 
-
-            // Dependency export
-            //transitiveExport = false // This is default.
-            // Bitcode embedding
-            embedBitcode(org.jetbrains.kotlin.gradle.plugin.mpp.BitcodeEmbeddingMode.BITCODE)
         }
 
         // Maps custom Xcode configuration to NativeBuildType
@@ -97,16 +90,11 @@ kotlin {
         moduleName = "@$scope/${project.name}"
         version = project.version as String
 
-        browser {
-            testTask {
-                useMocha()
-            }
-        }
-
-        nodejs()
+        browser()
 
         binaries.library()
         binaries.executable()
+        generateTypeScriptDefinitions()
     }
 
     sourceSets {
@@ -146,6 +134,7 @@ kotlin {
                 implementation(kmpLibs.test.kotlinx.coroutines.test)
                 implementation(kmpLibs.bundles.test.kotest)
                 implementation(kmpLibs.test.ktor.client.mock)
+                implementation(kmpLibs.test.telereso.core)
             }
         }
         jvmMain  {
@@ -153,6 +142,7 @@ kotlin {
                 implementation(kmpLibs.ktor.client.okhttp)
                 implementation(kmpLibs.okhttp.logging)
                 implementation(kmpLibs.sqldelight.runtime.jvm)
+                implementation(kmpLibs.sqldelight.sqlite.driver)
             }
         }
 
@@ -198,16 +188,17 @@ kotlin {
                  */
                 implementation(kmpLibs.ktor.client.js)
 
-                implementation(kmpLibs.sqldelight.sqljs.driver)
+                implementation(kmpLibs.sqldelight.web.worker.driver)
+                implementation(npm("@cashapp/sqldelight-sqljs-worker", "2.0.2"))
+                implementation(devNpm("copy-webpack-plugin", "9.1.0"))
 
-//                implementation(devNpm("copy-webpack-plugin", "9.1.0"))
                 implementation(npm("sql.js", kmpLibs.versions.sqlJs.get()))
                 implementation(npm("@js-joda/core", kmpLibs.versions.js.joda.core.get()))
             }
         }
-        jsTest {
+        val jsTest by getting {
             dependencies {
-                implementation(kmpLibs.sqldelight.sqljs.driver)
+                implementation(kmpLibs.sqldelight.web.worker.driver)
             }
         }
     }
@@ -341,15 +332,19 @@ tasks.named(
 }
 
 sqldelight {
-    database("AnnotationsClientDatabase") {
-        packageName = "$groupId.${project.name.replace("-",".")}.cache"
+    databases {
+        create("AnnotationsClientDatabase") {
+            packageName = "$groupId.${project.name.replace("-", ".")}.cache"
 
-        sourceFolders = listOf("sqldelight")
+            schemaOutputDirectory =
+                file("src/commonMain/sqldelight/$groupId.${project.name.replace("-", ".")}.cache")
 
-        schemaOutputDirectory = file("src/commonMain/sqldelight/$groupId.${project.name.replace("-",".")}.cache")
+            verifyMigrations = false
 
-        verifyMigrations = true
+            generateAsync.set(true)
+        }
     }
+
 }
 
 android {

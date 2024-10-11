@@ -1,12 +1,11 @@
 package io.telereso.annotations.client.cache
 
 import io.telereso.annotations.models.RocketLaunch
-import io.telereso.annotations.client.cache.Dao
-import io.telereso.annotations.client.cache.SharedDatabase
-import io.telereso.annotations.client.provideDbDriverTest
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
+import io.telereso.annotations.client.AnnotationsClientDatabaseDriverFactory
+import io.telereso.kmp.core.test.TestSqlDriverFactory
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -16,11 +15,17 @@ import kotlin.test.Test
 
 class DaoTest {
 
-    private val dao: Dao = Dao(SharedDatabase(::provideDbDriverTest, null))
+    companion object {
+        fun getTestFactory(): TestSqlDriverFactory {
+            return TestSqlDriverFactory(AnnotationsClientDatabaseDriverFactory.default())
+        }
+    }
+
+    private lateinit var dao: Dao
 
     @BeforeTest
     fun before() {
-
+        dao = Dao(SharedDatabase(getTestFactory()))
     }
 
     @AfterTest

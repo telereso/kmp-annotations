@@ -3,9 +3,11 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.*
+import io.telereso.kmp.core.Task
+import io.telereso.kmp.core.await
 
 data class ApiMockEngineParams(
-    val content: String,
+    val content: Task<String>,
     val status: HttpStatusCode = HttpStatusCode.OK,
     val headers: Headers = headersOf("Content-Type" to listOf(ContentType.Application.Json.toString())),
     val encodedPath:String? = null
@@ -36,14 +38,14 @@ class ApiMockEngine(val apiMockEngineParams: ApiMockEngineParams) {
                 if (!apiMockEngineParams.encodedPath.isNullOrEmpty()) {
                     if (request.url.encodedPath == apiMockEngineParams.encodedPath) {
                         respond(
-                            apiMockEngineParams.content,
+                            apiMockEngineParams.content.await(),
                             HttpStatusCode.OK,
                             apiMockEngineParams.headers
                         )
                     } else error("Unhandled ${request.url.encodedPath}")
                 } else {
                     respond(
-                        apiMockEngineParams.content,
+                        apiMockEngineParams.content.await(),
                         apiMockEngineParams.status,
                         apiMockEngineParams.headers
                     )

@@ -1,17 +1,16 @@
 package io.telereso.annotations.client.cache
 
-import com.squareup.sqldelight.ColumnAdapter
-import com.squareup.sqldelight.db.SqlDriver
-import com.squareup.sqldelight.runtime.coroutines.asFlow
-import com.squareup.sqldelight.runtime.coroutines.mapToList
-import com.squareup.sqldelight.runtime.coroutines.mapToOne
+import app.cash.sqldelight.ColumnAdapter
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
+import app.cash.sqldelight.coroutines.mapToOne
+import app.cash.sqldelight.db.SqlDriver
 import io.telereso.annotations.models.RocketLaunch
 import io.telereso.annotations.models.fromJson
 import io.telereso.annotations.models.toJson
 import io.telereso.kmp.core.CommonFlow
+import io.telereso.kmp.core.DispatchersProvider
 import io.telereso.kmp.core.asCommonFlow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.map
 
 
 /**
@@ -72,13 +71,13 @@ internal class Dao(val database: SharedDatabase) {
 
     internal suspend fun getRocketLaunchesFlow(): CommonFlow<List<RocketLaunch>> {
         return database.queries {
-            it.selectAllRocketLaunch(::mapper).asFlow().mapToList().asCommonFlow()
+            it.selectAllRocketLaunch(::mapper).asFlow().mapToList(DispatchersProvider.Default).asCommonFlow()
         }
     }
 
     internal suspend fun getFirstRocketLaunches(): CommonFlow<RocketLaunch?> {
         return database.queries {
-            it.selectFirstRocketLaunch(::mapper).asFlow().mapToOne().asCommonFlow()
+            it.selectFirstRocketLaunch(::mapper).asFlow().mapToOne(DispatchersProvider.Default).asCommonFlow()
         }
     }
 

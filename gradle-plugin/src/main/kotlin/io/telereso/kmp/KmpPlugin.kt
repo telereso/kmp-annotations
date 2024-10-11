@@ -324,6 +324,7 @@ class KmpPlugin : Plugin<Project> {
 
         gradle.projectsEvaluated {
             tasks.findByName("androidReleaseSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
+            tasks.findByName("androidDebugSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
         }
     }
 
