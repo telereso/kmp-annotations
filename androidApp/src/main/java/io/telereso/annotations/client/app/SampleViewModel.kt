@@ -1,6 +1,5 @@
 package io.telereso.annotations.client.app
 
-import io.telereso.annotations.client.DatabaseDriverFactory
 import io.telereso.annotations.client.AnnotationsClientManager.Companion.client
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -8,12 +7,13 @@ import com.chuckerteam.chucker.api.ChuckerInterceptor
 import io.telereso.annotations.models.RocketLaunch
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import io.telereso.annotations.client.AnnotationsClientDatabaseDriverFactory
 import io.telereso.kmp.core.Config
 import okhttp3.Interceptor
 
 class SampleViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val clientManager = client(DatabaseDriverFactory(application)) {
+    private val clientManager = client(AnnotationsClientDatabaseDriverFactory(application)) {
         withConfig(Config.builder(application.applicationInfo.loadLabel(application.packageManager).toString(),BuildConfig.VERSION_NAME) {
             shouldLogHttpRequests(true)
             withInterceptors(

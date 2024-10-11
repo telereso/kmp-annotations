@@ -38,7 +38,7 @@ import kotlin.native.concurrent.ThreadLocal
 @ReactNativeExport
 @ListWrappers
 class AnnotationsClientManager private constructor(
-    databaseDriverFactory: DatabaseDriverFactory? = null,
+    databaseDriverFactory: AnnotationsClientDatabaseDriverFactory? = null,
     private val builder: Builder,
     config: Config? = null
 ) {
@@ -50,7 +50,7 @@ class AnnotationsClientManager private constructor(
          * @param databaseDriverFactory a mandatory value needed to be passed
          */
         inline fun client(
-            databaseDriverFactory: DatabaseDriverFactory,
+            databaseDriverFactory: AnnotationsClientDatabaseDriverFactory,
             block: Builder.() -> Unit
         ) =
             Builder(databaseDriverFactory)
@@ -117,7 +117,7 @@ class AnnotationsClientManager private constructor(
                 config?.builder?.environment,
                 config?.builder?.protocol,
                 config?.builder?.host
-            ), Dao(SharedDatabase(::provideDbDriver, databaseDriverFactory))
+            ), Dao(SharedDatabase(databaseDriverFactory?:AnnotationsClientDatabaseDriverFactory.default()))
         )
     }
 
@@ -211,7 +211,7 @@ class AnnotationsClientManager private constructor(
      * Mandatory param values are part of the constructor.
      */
     class Builder(
-        val databaseDriverFactory: DatabaseDriverFactory
+        val databaseDriverFactory: AnnotationsClientDatabaseDriverFactory
     ) {
 
         internal var config: Config? = null

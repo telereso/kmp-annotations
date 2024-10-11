@@ -1,7 +1,7 @@
 package io.telereso.annotations.client
 
-import com.squareup.sqldelight.db.SqlDriver
-import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver
+import app.cash.sqldelight.db.SqlDriver
+import app.cash.sqldelight.sqlite.driver.JdbcSqliteDriver
 import java.io.File
 
 

@@ -1,20 +1,17 @@
 package io.telereso.annotations.client
 
+import app.cash.sqldelight.db.QueryResult
 import io.telereso.kmp.core.Settings
-import com.squareup.sqldelight.db.SqlDriver
+import app.cash.sqldelight.db.SqlSchema
+import io.telereso.kmp.core.SqlDriverFactory
 
 
-expect suspend fun provideDbDriver(
-    schema: SqlDriver.Schema,
-    databaseDriverFactory: DatabaseDriverFactory?
-): SqlDriver
+expect open class AnnotationsClientDatabaseDriverFactory : SqlDriverFactory {
+    companion object {
+        fun default(databaseName: String? = null): SqlDriverFactory
+    }
 
-/**
- * an abstract factory for database drivers.
- * SQLDelight provides multiple platform-specific implementations of the SQLite driver, so you need to create them for each platform separately.
- */
-expect class DatabaseDriverFactory {
-    fun createDriver(): SqlDriver
+    override fun getAsyncSchema(): SqlSchema<QueryResult.AsyncValue<Unit>>
 }
 
 val settings: Settings = Settings.get()

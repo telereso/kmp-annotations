@@ -4,12 +4,13 @@ import ApiMockEngine
 import ApiMockEngineParams
 import io.telereso.kmp.core.Settings
 import io.telereso.kmp.core.Http
-import io.telereso.annotations.client.Resource
 import io.telereso.annotations.client.cache.SettingsManager
 import io.kotest.matchers.shouldBe
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
+import io.telereso.kmp.core.test.Resource
+import io.telereso.kmp.core.test.readTextTask
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -28,7 +29,7 @@ class AnnotationsApiServiceImplTest {
         val httpClient = HttpClient(
             ApiMockEngine(
                 ApiMockEngineParams(
-                    Resource("launches.json").readText(),
+                    Resource("launches.json").readTextTask(),
                     encodedPath = "/v3/launches"
                 )
             ).get()

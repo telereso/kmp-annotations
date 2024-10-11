@@ -4,21 +4,22 @@ import ApiMockEngine
 import ApiMockEngineParams
 import io.telereso.kmp.core.Http
 import io.telereso.kmp.core.Settings
-import io.telereso.annotations.client.Resource
 import io.telereso.annotations.client.cache.Dao
 import io.telereso.annotations.client.cache.SettingsManager
 import io.telereso.annotations.client.cache.SharedDatabase
-import io.telereso.annotations.client.provideDbDriverTest
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
+import io.telereso.annotations.client.cache.DaoTest
 import kotlinx.coroutines.test.runTest
 import io.telereso.annotations.client.remote.AnnotationsApiService
 import io.telereso.annotations.client.remote.AnnotationsApiServiceImpl
 import io.telereso.annotations.client.repositories.AnnotationsClientRepository
+import io.telereso.kmp.core.test.Resource
+import io.telereso.kmp.core.test.readTextTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Ignore
@@ -35,7 +36,7 @@ class AnnotationsClientRepositoryTest {
         val httpMockClient = HttpClient(
             ApiMockEngine(
                 ApiMockEngineParams(
-                    Resource("launches.json").readText(),
+                    Resource("launches.json").readTextTask(),
                     encodedPath = "/v3/launches"
                 )
             ).get()
@@ -47,7 +48,7 @@ class AnnotationsClientRepositoryTest {
 
         val settingsManager = SettingsManager(Settings.getInMemory())
         apiService = AnnotationsApiServiceImpl(settingsManager, httpMockClient, null, null, null)
-        val sharedDatabase = SharedDatabase(::provideDbDriverTest, null)
+        val sharedDatabase = SharedDatabase(DaoTest.getTestFactory())
         dao = Dao(sharedDatabase)
         repository = AnnotationsClientRepository(settingsManager, apiService, dao)
     }

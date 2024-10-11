@@ -1,20 +1,25 @@
 package io.telereso.annotations.client
 
 import android.content.Context
-import io.telereso.annotations.client.cache.AnnotationsClientDatabase
 import io.telereso.annotations.client.cache.Dao
-import com.squareup.sqldelight.android.AndroidSqliteDriver
-import com.squareup.sqldelight.db.SqlDriver
+import app.cash.sqldelight.async.coroutines.synchronous
+import app.cash.sqldelight.db.QueryResult
+import app.cash.sqldelight.db.SqlSchema
+import io.telereso.annotations.client.cache.AnnotationsClientDatabase
+import io.telereso.kmp.core.SqlDriverFactory
 
-actual suspend fun provideDbDriver(
-    schema: SqlDriver.Schema,
-    databaseDriverFactory: DatabaseDriverFactory?
-): SqlDriver {
-    return databaseDriverFactory!!.createDriver()
-}
 
-actual class DatabaseDriverFactory(private val context: Context) {
-    actual fun createDriver(): SqlDriver {
-        return AndroidSqliteDriver(AnnotationsClientDatabase.Schema, context, Dao.DATABASE_NAME)
+actual open class AnnotationsClientDatabaseDriverFactory(
+    context: Context?,
+    databaseName: String? = null
+) :
+    SqlDriverFactory(databaseName ?: Dao.DATABASE_NAME, context) {
+    actual companion object {
+        actual fun default(databaseName: String?): SqlDriverFactory {
+            return AnnotationsClientDatabaseDriverFactory(null, databaseName)
+        }
     }
+
+    actual override fun getAsyncSchema() = AnnotationsClientDatabase.Schema
+    override fun getSchema(): SqlSchema<QueryResult.Value<Unit>>? = AnnotationsClientDatabase.Schema.synchronous()
 }
