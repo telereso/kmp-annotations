@@ -22,6 +22,7 @@ dependencyResolutionManagement {
         create("kmpLibs") {
             from("io.telereso.kmp:catalog:$teleresoKmpCatalog")
               version("teleresoKmp", "0.0.1-local")
+              version("ktor", "3.0.0")
         }
     }
 }
