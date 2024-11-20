@@ -30,14 +30,17 @@ import io.telereso.kmp.TeleresoKmpExtension.Companion.teleresoKmp
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.extra
+import org.gradle.kotlin.dsl.newInstance
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.cocoapods.CocoapodsExtension
 import java.io.File
 import java.util.*
+import javax.inject.Inject
 import kotlin.jvm.optionals.getOrNull
 
 const val KEY_TELERESO_KMP_DEVELOPMENT_MODE = "teleresoKmpDevelopmentPath"
@@ -320,12 +323,180 @@ class KmpPlugin : Plugin<Project> {
                         tasks.findByName(it)?.dependsOn(reactNativeGradle8Workaround)
                 }
             }
+
+            if (teleresoKmp.enableScreenShots)
+                screenShotTest(teleresoKmp.screenShotsTolerance)
         }
 
         gradle.projectsEvaluated {
             tasks.findByName("androidReleaseSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("androidDebugSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
         }
+    }
+
+
+    interface Injected {
+        @get:Inject
+        val fs: FileSystemOperations
+    }
+
+    private fun Project.screenShotTest(tolerance: Float) {
+        val screenShotsDir = project.layout.buildDirectory.dir("telereso/screenShots")
+        val screenShotsConfig = screenShotsDir.get().file("config.json")
+        screenShotsConfig.asFile.apply {
+            if (exists()){
+                delete()
+            }
+            createNewFile()
+            writeText("""
+                { 
+                  "tolerance": "$tolerance"
+                }
+            """.trimIndent())
+        }
+
+
+        tasks.register("recordTeleresoScreenShots") {
+            finalizedBy("jvmTest") // Ensure jvmTest runs after recodeScreenShots
+            val screenShotsDir = projectDir.resolve("src").resolve("screenShots")
+            val injected = project.objects.newInstance<Injected>()
+
+            doFirst {
+                injected.fs.delete {
+                    delete(screenShotsDir)
+                }
+            }
+        }
+
+
+        tasks.register("cleanTeleresoScreenShots") {
+            val screenShotsReportDir = project.layout.buildDirectory.dir("telereso/reports/screenShotTest")
+            val injected = project.objects.newInstance<Injected>()
+
+            doFirst {
+                injected.fs.delete {
+                    delete(screenShotsDir)
+                    delete(screenShotsReportDir)
+                }
+            }
+        }
+
+        tasks.register("checkTeleresoScreenShotsReport") {
+            val screenShotsReportDir = layout.buildDirectory.file("telereso/reports/screenShotTest")
+
+            doLast {
+                val reportDir = screenShotsReportDir.get().asFile
+                // Method to recursively get all subdirectories under the base directory
+                fun getDirectoriesRecursive(rootDir: File): List<File> {
+                    val directories = mutableListOf<File>()
+                    rootDir.walkTopDown().forEach { dir ->
+                        if (dir.isDirectory) {
+                            directories.add(dir)
+                        }
+                    }
+                    return directories
+                }
+
+                // Method to generate the discovery page for each directory
+                fun generateDiscoveryPage(indexFile: File, parentDir: File) {
+                    // Get all immediate child directories (direct subdirectories of parentDir)
+                    val subdirectories = getDirectoriesRecursive(parentDir).filter { it.parentFile == parentDir }
+
+                    val links = subdirectories.map { dir ->
+                        // Create a link for each direct subdirectory found
+                        val dirName = dir.name
+                        """<li><a href="${dir.relativeTo(parentDir).path}/index.html">$dirName</a></li>"""
+                    }.joinToString("\n")
+
+                    // HTML template for the discovery page
+                    val content = """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>${parentDir.name}</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 20px;
+                        background-color: #f4f4f4;
+                    }
+                    h1 {
+                        text-align: center;
+                        color: #333;
+                    }
+                    .test-title {
+                        font-size: 24px;
+                        margin-bottom: 15px;
+                        text-align: center;
+                    }
+                    .test-list {
+                        list-style-type: none;
+                        padding: 0;
+                    }
+                    .test-list li {
+                        margin: 10px 0;
+                    }
+                    a {
+                        text-decoration: none;
+                        color: #3498db;
+                    }
+                    a:hover {
+                        text-decoration: underline;
+                    }
+                    .divider {
+                        margin: 20px 0;
+                        border-top: 1px solid #ccc;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="test-title">
+                    <h2>${parentDir.name}</h2>
+                </div>
+
+                <ul class="test-list">
+                    $links
+                </ul>
+
+                <div class="divider"></div>
+
+                <footer style="text-align: center;">
+                    <p>&copy; 2024 Test Report</p>
+                </footer>
+            </body>
+            </html>
+        """.trimIndent()
+
+                    // Write the content to index.html file in the parent directory
+                    indexFile.writeText(content)
+                }
+
+                if (reportDir.exists()) {
+                    // Get all directories under baseDir recursively
+                    val directories = getDirectoriesRecursive((reportDir))
+
+                    directories.forEach { dir ->
+                        val indexFile = dir.toPath().resolve("index.html").toFile()
+
+                        // If an index.html already exists in the directory, skip this directory
+                        if (indexFile.exists()) {
+                            return@forEach
+                        }
+
+                        // Generate a discovery page if the directory does not already have index.html
+                        generateDiscoveryPage(indexFile, dir)
+                    }
+
+                    println("ScreenShot testing failed \uD83D\uDEA8 See the report \uD83D\uDCD5 at: file://${reportDir.path}/index.html")
+                }
+            }
+        }
+
+        tasks.findByName("jvmTest")
+            ?.dependsOn("cleanTeleresoScreenShots")
+            ?.finalizedBy("checkTeleresoScreenShotsReport")
     }
 
     private fun Project.exportReactNativePackages(
