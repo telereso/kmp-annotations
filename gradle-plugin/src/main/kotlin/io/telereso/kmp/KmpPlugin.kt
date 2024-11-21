@@ -37,6 +37,7 @@ import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.newInstance
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
 import org.jetbrains.kotlin.gradle.plugin.cocoapods.CocoapodsExtension
 import java.io.File
 import java.util.*
@@ -341,12 +342,14 @@ class KmpPlugin : Plugin<Project> {
     }
 
     private fun Project.screenShotTest(tolerance: Float) {
-        val screenShotsDir = project.layout.buildDirectory.dir("telereso/screenShots")
-        val screenShotsConfig = screenShotsDir.get().file("config.json")
+        val screenShotsBuildDir = project.layout.buildDirectory.dir("telereso/screenShots")
+        val screenShotsReportDir = project.layout.buildDirectory.dir("telereso/reports/screenShotTest")
+        val screenShotsConfig = screenShotsBuildDir.get().file("config.json")
         screenShotsConfig.asFile.apply {
             if (exists()){
                 delete()
             }
+            ensureParentDirsCreated()
             createNewFile()
             writeText("""
                 { 
@@ -358,8 +361,10 @@ class KmpPlugin : Plugin<Project> {
 
         tasks.register("recordTeleresoScreenShots") {
             finalizedBy("jvmTest") // Ensure jvmTest runs after recodeScreenShots
-            val screenShotsDir = projectDir.resolve("src").resolve("screenShots")
             val injected = project.objects.newInstance<Injected>()
+            val screenShotsDir = projectDir
+                .resolve("telereso")
+                .resolve("screenShots")
 
             doFirst {
                 injected.fs.delete {
@@ -369,21 +374,20 @@ class KmpPlugin : Plugin<Project> {
         }
 
 
-        tasks.register("cleanTeleresoScreenShots") {
-            val screenShotsReportDir = project.layout.buildDirectory.dir("telereso/reports/screenShotTest")
+        tasks.register("cleanTeleresoScreenShotsReport") {
             val injected = project.objects.newInstance<Injected>()
 
             doFirst {
                 injected.fs.delete {
-                    delete(screenShotsDir)
-                    delete(screenShotsReportDir)
+                    delete(screenShotsReportDir.get())
+                }
+                injected.fs.delete {
+                    delete(screenShotsBuildDir.get().dir("diff"))
                 }
             }
         }
 
         tasks.register("checkTeleresoScreenShotsReport") {
-            val screenShotsReportDir = layout.buildDirectory.file("telereso/reports/screenShotTest")
-
             doLast {
                 val reportDir = screenShotsReportDir.get().asFile
                 // Method to recursively get all subdirectories under the base directory
@@ -397,81 +401,143 @@ class KmpPlugin : Plugin<Project> {
                     return directories
                 }
 
-                // Method to generate the discovery page for each directory
                 fun generateDiscoveryPage(indexFile: File, parentDir: File) {
                     // Get all immediate child directories (direct subdirectories of parentDir)
                     val subdirectories = getDirectoriesRecursive(parentDir).filter { it.parentFile == parentDir }
 
+                    // Create links for each direct subdirectory
                     val links = subdirectories.map { dir ->
-                        // Create a link for each direct subdirectory found
                         val dirName = dir.name
                         """<li><a href="${dir.relativeTo(parentDir).path}/index.html">$dirName</a></li>"""
                     }.joinToString("\n")
 
+                    // Define total and passed counts (example values; replace with actual data if needed)
+//                    val totalTests = subdirectories.size
+//                    val passedTests = totalTests // Assume all passed for now (replace with logic to calculate actual passes)
+                    val failedTests = subdirectories.size // Replace with logic if needed
+//                    val skippedTests = 0 // Replace with logic if needed
+
                     // HTML template for the discovery page
                     val content = """
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>${parentDir.name}</title>
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        margin: 20px;
-                        background-color: #f4f4f4;
-                    }
-                    h1 {
-                        text-align: center;
-                        color: #333;
-                    }
-                    .test-title {
-                        font-size: 24px;
-                        margin-bottom: 15px;
-                        text-align: center;
-                    }
-                    .test-list {
-                        list-style-type: none;
-                        padding: 0;
-                    }
-                    .test-list li {
-                        margin: 10px 0;
-                    }
-                    a {
-                        text-decoration: none;
-                        color: #3498db;
-                    }
-                    a:hover {
-                        text-decoration: underline;
-                    }
-                    .divider {
-                        margin: 20px 0;
-                        border-top: 1px solid #ccc;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="test-title">
-                    <h2>${parentDir.name}</h2>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${parentDir.name}</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                    background-color: #f9f9f9;
+                    color: #333;
+                }
+                h1 {
+                    text-align: center;
+                    color: #2c3e50;
+                }
+                .container {
+                    max-width: 900px;
+                    margin: 0 auto;
+                    background: #fff;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    padding: 20px;
+                }
+                .summary {
+                    margin-bottom: 20px;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    overflow: hidden;
+                }
+                .summary-header {
+                    background-color: #3498db;
+                    color: #fff;
+                    padding: 10px;
+                    font-size: 18px;
+                    font-weight: bold;
+                }
+                .summary-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                .summary-table th, .summary-table td {
+                    padding: 10px;
+                    text-align: left;
+                    border: 1px solid #ddd;
+                }
+                .summary-table th {
+                    background-color: #ecf0f1;
+                }
+                .status-pass {
+                    color: #27ae60;
+                    font-weight: bold;
+                }
+                .status-fail {
+                    color: #e74c3c;
+                    font-weight: bold;
+                }
+                .test-list {
+                    list-style-type: none;
+                    padding: 0;
+                }
+                .test-list li {
+                    margin: 10px 0;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    background: #f4f4f4;
+                    transition: background 0.3s;
+                }
+                .test-list li:hover {
+                    background: #eaf2f8;
+                }
+                a {
+                    text-decoration: none;
+                    color: #3498db;
+                    font-weight: bold;
+                }
+                a:hover {
+                    text-decoration: underline;
+                }
+                footer {
+                    text-align: center;
+                    margin-top: 20px;
+                    font-size: 14px;
+                    color: #999;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Test Report: ${parentDir.name}</h1>
+                
+                <div class="summary">
+                    <div class="summary-header">Test Summary</div>
+                    <table class="summary-table">
+                        <tr>
+                            <th>Failed</th>
+                            <td class="status-fail">$failedTests</td>
+                        </tr>
+                    </table>
                 </div>
 
                 <ul class="test-list">
                     $links
                 </ul>
 
-                <div class="divider"></div>
-
-                <footer style="text-align: center;">
+                <footer>
                     <p>&copy; 2024 Test Report</p>
                 </footer>
-            </body>
-            </html>
-        """.trimIndent()
+            </div>
+        </body>
+        </html>
+    """.trimIndent()
 
                     // Write the content to index.html file in the parent directory
                     indexFile.writeText(content)
                 }
+
 
                 if (reportDir.exists()) {
                     // Get all directories under baseDir recursively
@@ -495,7 +561,7 @@ class KmpPlugin : Plugin<Project> {
         }
 
         tasks.findByName("jvmTest")
-            ?.dependsOn("cleanTeleresoScreenShots")
+            ?.dependsOn("cleanTeleresoScreenShotsReport")
             ?.finalizedBy("checkTeleresoScreenShotsReport")
     }
 
