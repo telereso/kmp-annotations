@@ -25,10 +25,9 @@ on:
 
 jobs:
   build:
-
     runs-on: macos-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
