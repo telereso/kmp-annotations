@@ -11,7 +11,14 @@ group = rootProject.group
 version = rootProject.version
 
 kotlin {
-  jvm()
+
+  jvm {
+    compilations.all {
+      kotlinOptions {
+        jvmTarget = kmpLibs.versions.java.get()
+      }
+    }
+  }
 
   androidTarget()
 
@@ -56,6 +63,16 @@ android {
   compileOptions {
     sourceCompatibility = JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
     targetCompatibility = JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
+  }
+  kotlin {
+    jvmToolchain(kmpLibs.versions.java.get().toInt())
+    androidTarget {
+      compilations.all {
+        kotlinOptions {
+          jvmTarget = kmpLibs.versions.java.get()
+        }
+      }
+    }
   }
 }
 
