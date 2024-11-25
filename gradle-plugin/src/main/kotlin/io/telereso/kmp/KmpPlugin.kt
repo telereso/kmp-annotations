@@ -30,14 +30,18 @@ import io.telereso.kmp.TeleresoKmpExtension.Companion.teleresoKmp
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.extra
+import org.gradle.kotlin.dsl.newInstance
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
 import org.jetbrains.kotlin.gradle.plugin.cocoapods.CocoapodsExtension
 import java.io.File
 import java.util.*
+import javax.inject.Inject
 import kotlin.jvm.optionals.getOrNull
 
 const val KEY_TELERESO_KMP_DEVELOPMENT_MODE = "teleresoKmpDevelopmentPath"
@@ -320,12 +324,245 @@ class KmpPlugin : Plugin<Project> {
                         tasks.findByName(it)?.dependsOn(reactNativeGradle8Workaround)
                 }
             }
+
+            if (teleresoKmp.enableScreenShots)
+                screenShotTest(teleresoKmp.screenShotsTolerance)
         }
 
         gradle.projectsEvaluated {
             tasks.findByName("androidReleaseSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
             tasks.findByName("androidDebugSourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
         }
+    }
+
+
+    interface Injected {
+        @get:Inject
+        val fs: FileSystemOperations
+    }
+
+    private fun Project.screenShotTest(tolerance: Float) {
+        val screenShotsBuildDir = project.layout.buildDirectory.dir("telereso/screenShots")
+        val screenShotsReportDir = project.layout.buildDirectory.dir("telereso/reports/screenShotTest")
+        val screenShotsConfig = screenShotsBuildDir.get().file("config.json")
+        screenShotsConfig.asFile.apply {
+            if (exists()){
+                delete()
+            }
+            ensureParentDirsCreated()
+            createNewFile()
+            writeText("""
+                { 
+                  "tolerance": "$tolerance"
+                }
+            """.trimIndent())
+        }
+
+
+        tasks.register("recordTeleresoScreenShots") {
+            finalizedBy("jvmTest") // Ensure jvmTest runs after recodeScreenShots
+            val injected = project.objects.newInstance<Injected>()
+            val screenShotsDir = projectDir
+                .resolve("telereso")
+                .resolve("screenShots")
+
+            doFirst {
+                injected.fs.delete {
+                    delete(screenShotsDir)
+                }
+            }
+        }
+
+
+        tasks.register("cleanTeleresoScreenShotsReport") {
+            val injected = project.objects.newInstance<Injected>()
+
+            doFirst {
+                injected.fs.delete {
+                    delete(screenShotsReportDir.get())
+                }
+                injected.fs.delete {
+                    delete(screenShotsBuildDir.get().dir("diff"))
+                }
+            }
+        }
+
+        tasks.register("checkTeleresoScreenShotsReport") {
+            doLast {
+                val reportDir = screenShotsReportDir.get().asFile
+                // Method to recursively get all subdirectories under the base directory
+                fun getDirectoriesRecursive(rootDir: File): List<File> {
+                    val directories = mutableListOf<File>()
+                    rootDir.walkTopDown().forEach { dir ->
+                        if (dir.isDirectory) {
+                            directories.add(dir)
+                        }
+                    }
+                    return directories
+                }
+
+                fun generateDiscoveryPage(indexFile: File, parentDir: File) {
+                    // Get all immediate child directories (direct subdirectories of parentDir)
+                    val subdirectories = getDirectoriesRecursive(parentDir).filter { it.parentFile == parentDir }
+
+                    // Create links for each direct subdirectory
+                    val links = subdirectories.map { dir ->
+                        val dirName = dir.name
+                        """<li><a href="${dir.relativeTo(parentDir).path}/index.html">$dirName</a></li>"""
+                    }.joinToString("\n")
+
+                    // Define total and passed counts (example values; replace with actual data if needed)
+//                    val totalTests = subdirectories.size
+//                    val passedTests = totalTests // Assume all passed for now (replace with logic to calculate actual passes)
+                    val failedTests = subdirectories.size // Replace with logic if needed
+//                    val skippedTests = 0 // Replace with logic if needed
+
+                    // HTML template for the discovery page
+                    val content = """
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${parentDir.name}</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                    background-color: #f9f9f9;
+                    color: #333;
+                }
+                h1 {
+                    text-align: center;
+                    color: #2c3e50;
+                }
+                .container {
+                    max-width: 900px;
+                    margin: 0 auto;
+                    background: #fff;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    padding: 20px;
+                }
+                .summary {
+                    margin-bottom: 20px;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    overflow: hidden;
+                }
+                .summary-header {
+                    background-color: #3498db;
+                    color: #fff;
+                    padding: 10px;
+                    font-size: 18px;
+                    font-weight: bold;
+                }
+                .summary-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                .summary-table th, .summary-table td {
+                    padding: 10px;
+                    text-align: left;
+                    border: 1px solid #ddd;
+                }
+                .summary-table th {
+                    background-color: #ecf0f1;
+                }
+                .status-pass {
+                    color: #27ae60;
+                    font-weight: bold;
+                }
+                .status-fail {
+                    color: #e74c3c;
+                    font-weight: bold;
+                }
+                .test-list {
+                    list-style-type: none;
+                    padding: 0;
+                }
+                .test-list li {
+                    margin: 10px 0;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    background: #f4f4f4;
+                    transition: background 0.3s;
+                }
+                .test-list li:hover {
+                    background: #eaf2f8;
+                }
+                a {
+                    text-decoration: none;
+                    color: #3498db;
+                    font-weight: bold;
+                }
+                a:hover {
+                    text-decoration: underline;
+                }
+                footer {
+                    text-align: center;
+                    margin-top: 20px;
+                    font-size: 14px;
+                    color: #999;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Test Report: ${parentDir.name}</h1>
+                
+                <div class="summary">
+                    <div class="summary-header">Test Summary</div>
+                    <table class="summary-table">
+                        <tr>
+                            <th>Failed</th>
+                            <td class="status-fail">$failedTests</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <ul class="test-list">
+                    $links
+                </ul>
+
+                <footer>
+                    <p>&copy; 2024 Test Report</p>
+                </footer>
+            </div>
+        </body>
+        </html>
+    """.trimIndent()
+
+                    // Write the content to index.html file in the parent directory
+                    indexFile.writeText(content)
+                }
+
+
+                if (reportDir.exists()) {
+                    // Get all directories under baseDir recursively
+                    val directories = getDirectoriesRecursive((reportDir))
+
+                    directories.forEach { dir ->
+                        val indexFile = dir.toPath().resolve("index.html").toFile()
+
+                        // If an index.html already exists in the directory, skip this directory
+                        if (indexFile.exists()) {
+                            return@forEach
+                        }
+
+                        // Generate a discovery page if the directory does not already have index.html
+                        generateDiscoveryPage(indexFile, dir)
+                    }
+
+                    println("ScreenShot testing failed \uD83D\uDEA8 See the report \uD83D\uDCD5 at: file://${reportDir.path}/index.html")
+                }
+            }
+        }
+
+        tasks.findByName("jvmTest")
+            ?.dependsOn("cleanTeleresoScreenShotsReport")
+            ?.finalizedBy("checkTeleresoScreenShotsReport")
     }
 
     private fun Project.exportReactNativePackages(

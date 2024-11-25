@@ -43,6 +43,14 @@ version = rootProject.version
 
 java {
   withSourcesJar()
+  sourceCompatibility = JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
+  targetCompatibility = JavaVersion.valueOf("VERSION_${kmpLibs.versions.java.get()}")
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+  kotlinOptions {
+    jvmTarget = kmpLibs.versions.java.get()
+  }
 }
 
 publishing {

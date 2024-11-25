@@ -78,6 +78,20 @@ open class TeleresoKmpExtension @Inject constructor(
 
     var removeStringErrorExtension: Boolean = true
 
+    /**
+     * Disabled by defaulted
+     * Set to true if project needs to enable screen shot testing
+     */
+    var enableScreenShots: Boolean = false
+
+    /**
+     * ScreenShot testing tolerance to changes
+     * This might include coloring and position positioning
+     * It range from 0 to 100 , so 1f means 0.1% and it's strict to changes and 99% is very relaxed
+     * Recommended to keep at 0.1%
+     */
+    var screenShotsTolerance: Float = 1f
+
     internal val exportedReactNativePackages = mutableListOf<ReactNativePackage>()
 
 
